@@ -1,0 +1,24 @@
+name = "worker-diary"
+main = "src/index.ts"
+compatibility_date = "2026-09-19"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "worker-diary"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "worker-diary-images"
+
+# Set secrets with Wrangler; do not place credentials in this file:
+# wrangler secret put GOOGLE_CLIENT_ID
+# wrangler secret put GOOGLE_CLIENT_SECRET
+# wrangler secret put SESSION_SECRET
+# For local development, add the same variables to .dev.vars (which is gitignored).
