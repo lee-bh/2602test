@@ -14,6 +14,11 @@ const encoder = new TextEncoder();
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const error = (message: string, status = 400) => json({ error: message }, status);
 const id = () => crypto.randomUUID();
+// Cookie values may not contain `"` or `,` (RFC 6265), so every signed payload travels base64url-encoded.
+const pack = (value: unknown) => base64url(encoder.encode(JSON.stringify(value)));
+const unpack = <T>(raw: string): T => JSON.parse(new TextDecoder().decode(decodeBase64url(raw))) as T;
+const configured = (env: Env) => Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.SESSION_SECRET);
+const CONFIG_MESSAGE = "서버에 Google 로그인 설정이 없습니다. GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / SESSION_SECRET 시크릿을 설정해 주세요.";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -131,31 +136,66 @@ async function verifySigned(value: string | undefined, secret: string) { if (!va
 function constantTimeEqual(left: Uint8Array, right: Uint8Array) { if (left.length !== right.length) return false; let diff = 0; for (let i = 0; i < left.length; i++) diff |= left[i] ^ right[i]; return diff === 0; }
 function cookie(request: Request, name: string) { return request.headers.get("Cookie")?.split(";").map((part) => part.trim()).find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1); }
 function cookieHeader(name: string, value: string, maxAge?: number) { return `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax${maxAge !== undefined ? `; Max-Age=${maxAge}` : ""}`; }
-async function getSession(request: Request, env: Env): Promise<Session | null> { const raw = await verifySigned(cookie(request, "diary_session"), env.SESSION_SECRET); if (!raw) return null; try { const session = JSON.parse(new TextDecoder().decode(decodeBase64url(raw))) as Session; return session.exp > Date.now() / 1000 ? session : null; } catch { return null; } }
+async function getSession(request: Request, env: Env): Promise<Session | null> { if (!env.SESSION_SECRET) return null; const raw = await verifySigned(cookie(request, "diary_session"), env.SESSION_SECRET); if (!raw) return null; try { const session = unpack<Session>(raw); return session.exp > Date.now() / 1000 ? session : null; } catch { return null; } }
 
 async function beginGoogleLogin(request: Request, env: Env): Promise<Response> {
+  if (!configured(env)) return loginFailed(CONFIG_MESSAGE);
   const state = base64url(crypto.getRandomValues(new Uint8Array(24)));
   const verifier = base64url(crypto.getRandomValues(new Uint8Array(48)));
   const challenge = base64url(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(verifier))));
   const redirectUri = new URL("/auth/google/callback", request.url).href;
   const params = new URLSearchParams({ client_id: env.GOOGLE_CLIENT_ID, redirect_uri: redirectUri, response_type: "code", scope: "openid email profile", state, code_challenge: challenge, code_challenge_method: "S256", prompt: "select_account" });
-  const signedState = await signed(JSON.stringify({ state, verifier, exp: Date.now() + 600_000 }), env.SESSION_SECRET);
+  const signedState = await signed(pack({ state, verifier, exp: Date.now() + 600_000 }), env.SESSION_SECRET);
   return new Response(null, { status: 302, headers: { Location: `https://accounts.google.com/o/oauth2/v2/auth?${params}`, "Set-Cookie": cookieHeader("oauth_state", signedState, 600) } });
 }
 async function finishGoogleLogin(request: Request, env: Env): Promise<Response> {
-  const url = new URL(request.url); const saved = await verifySigned(cookie(request, "oauth_state"), env.SESSION_SECRET);
-  if (!saved || url.searchParams.get("error")) return error("Google 로그인이 취소되었거나 만료되었습니다.", 401);
-  const state = JSON.parse(saved) as { state: string; verifier: string; exp: number };
-  if (state.exp < Date.now() || state.state !== url.searchParams.get("state") || !url.searchParams.get("code")) return error("로그인 요청을 확인할 수 없습니다.", 401);
+  if (!configured(env)) return loginFailed(CONFIG_MESSAGE);
+  const url = new URL(request.url);
+  const googleError = url.searchParams.get("error");
+  if (googleError) return loginFailed(`Google 로그인이 취소되었습니다. (${googleError})`);
+  const saved = await verifySigned(cookie(request, "oauth_state"), env.SESSION_SECRET);
+  if (!saved) return loginFailed("로그인 상태 쿠키를 찾을 수 없습니다. 다시 시도해 주세요.");
+
+  let state: { state: string; verifier: string; exp: number };
+  try { state = unpack(saved); } catch { return loginFailed("로그인 요청을 확인할 수 없습니다."); }
+  const code = url.searchParams.get("code");
+  if (state.exp < Date.now()) return loginFailed("로그인 요청이 만료되었습니다. 다시 시도해 주세요.");
+  if (state.state !== url.searchParams.get("state") || !code) return loginFailed("로그인 요청을 확인할 수 없습니다.");
+
   const redirectUri = new URL("/auth/google/callback", request.url).href;
-  const tokens = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code: url.searchParams.get("code")!, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, redirect_uri: redirectUri, grant_type: "authorization_code", code_verifier: state.verifier }) }).then(async (r) => r.ok ? r.json() as Promise<{ id_token: string }> : Promise.reject(new Error("Token exchange failed")));
-  const profile = await verifyGoogleToken(tokens.id_token, env.GOOGLE_CLIENT_ID);
-  if (!profile.email_verified) return error("Google 이메일 인증이 필요합니다.", 401);
-  let user = await env.DB.prepare("SELECT id FROM users WHERE google_sub = ?").bind(profile.sub).first<{ id: string }>();
-  if (!user) { user = { id: id() }; await env.DB.prepare("INSERT INTO users (id, google_sub, email, name, avatar_url) VALUES (?, ?, ?, ?, ?)").bind(user.id, profile.sub, profile.email, profile.name || profile.email, profile.picture || null).run(); }
-  const session = base64url(encoder.encode(JSON.stringify({ userId: user.id, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 14 } satisfies Session)));
+  let profile: Awaited<ReturnType<typeof verifyGoogleToken>>;
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_CLIENT_SECRET, redirect_uri: redirectUri, grant_type: "authorization_code", code_verifier: state.verifier }) });
+    if (!response.ok) {
+      console.error("Google token exchange failed", response.status, await response.text());
+      return loginFailed(`Google 토큰 교환에 실패했습니다 (${response.status}). Google Cloud Console에 승인된 리디렉션 URI로 ${redirectUri} 가 등록되어 있는지 확인해 주세요.`);
+    }
+    const tokens = await response.json() as { id_token?: string };
+    if (!tokens.id_token) return loginFailed("Google 응답에 ID 토큰이 없습니다.");
+    profile = await verifyGoogleToken(tokens.id_token, env.GOOGLE_CLIENT_ID);
+  } catch (cause) {
+    console.error(cause);
+    return loginFailed("Google 인증 정보를 확인하지 못했습니다.");
+  }
+  if (!profile.email_verified) return loginFailed("Google 이메일 인증이 필요합니다.");
+
+  let user: { id: string } | null;
+  try {
+    user = await env.DB.prepare("SELECT id FROM users WHERE google_sub = ?").bind(profile.sub).first<{ id: string }>();
+    if (!user) { user = { id: id() }; await env.DB.prepare("INSERT INTO users (id, google_sub, email, name, avatar_url) VALUES (?, ?, ?, ?, ?)").bind(user.id, profile.sub, profile.email, profile.name || profile.email, profile.picture || null).run(); }
+  } catch (cause) {
+    console.error(cause);
+    return loginFailed("사용자 정보를 저장하지 못했습니다. D1 마이그레이션이 적용되었는지 확인해 주세요.");
+  }
+
+  const session = pack({ userId: user.id, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 14 } satisfies Session);
   const headers = new Headers({ Location: "/" });
   headers.append("Set-Cookie", cookieHeader("diary_session", await signed(session, env.SESSION_SECRET), 60 * 60 * 24 * 14));
+  headers.append("Set-Cookie", cookieHeader("oauth_state", "", 0));
+  return new Response(null, { status: 302, headers });
+}
+function loginFailed(message: string): Response {
+  const headers = new Headers({ Location: `/?login_error=${encodeURIComponent(message)}` });
   headers.append("Set-Cookie", cookieHeader("oauth_state", "", 0));
   return new Response(null, { status: 302, headers });
 }

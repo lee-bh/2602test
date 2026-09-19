@@ -1,6 +1,6 @@
 const $ = (selector) => document.querySelector(selector);
 let entries = []; let active = null;
-const api = async (path, options = {}) => { const response = await fetch(path, options); if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || '요청에 실패했습니다.'); return response.status === 204 ? null : response.json(); };
+const api = async (path, options = {}) => { const response = await fetch(path, options); if (!response.ok) { const error = new Error((await response.json().catch(() => ({}))).error || '요청에 실패했습니다.'); error.status = response.status; throw error; } return response.status === 204 ? null : response.json(); };
 const escapeHtml = (value) => value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -18,5 +18,23 @@ function openEntry(entry) {
   $('#editor').className = 'card'; $('#editor').replaceChildren(fragment);
 }
 async function createEntry() { try { const result = await api('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entryDate: today(), title: '', body: '' }) }); entries.unshift(result.entry); openEntry(result.entry); } catch (error) { alert(error.message); } }
-async function start() { try { const { user } = await api('/api/me'); $('#account').innerHTML = `<span class="user">${escapeHtml(user.name)}</span><button class="logout">로그아웃</button>`; $('.logout').onclick = async () => { await api('/auth/logout', { method: 'POST' }); location.reload(); }; const data = await api('/api/entries'); entries = data.entries; $('#loading').hidden = true; $('#app').hidden = false; renderList(); $('#new-entry').onclick = createEntry; } catch { $('#loading').hidden = true; $('#login').hidden = false; } }
+function showLogin(message) {
+  $('#loading').hidden = true; $('#login').hidden = false;
+  const reason = message || new URLSearchParams(location.search).get('login_error');
+  if (reason) $('#login-message').textContent = reason;
+  if (location.search) history.replaceState(null, '', location.pathname);
+}
+async function start() {
+  let user;
+  try { ({ user } = await api('/api/me')); }
+  catch (error) { showLogin(error.status === 401 ? null : error.message); return; }
+  $('#account').innerHTML = `<span class="user">${escapeHtml(user.name)}</span><button class="logout">로그아웃</button>`;
+  $('.logout').onclick = async () => { await api('/auth/logout', { method: 'POST' }); location.reload(); };
+  try {
+    const data = await api('/api/entries');
+    entries = data.entries;
+  } catch (error) { showLogin(error.message); return; }
+  $('#loading').hidden = true; $('#app').hidden = false; renderList();
+  $('#new-entry').onclick = createEntry;
+}
 start();

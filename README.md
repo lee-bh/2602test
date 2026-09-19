@@ -13,13 +13,15 @@ npx wrangler r2 bucket create worker-diary-images
 The configured D1 database is `leebh-first` (`42bf2fd6-f5d4-4462-a2a6-d28171c8fa1a`). Apply the schema with:
 
 ```bash
-npx wrangler d1 migrations apply worker-diary --remote
+npx wrangler d1 migrations apply leebh-first --remote
 ```
 
 Create a Google OAuth **Web application** client. Add both of these authorized redirect URIs (replace the origin):
 
 - `http://localhost:8787/auth/google/callback`
-- `https://your-worker.your-subdomain.workers.dev/auth/google/callback`
+- `https://2602test.<your-subdomain>.workers.dev/auth/google/callback`
+
+The redirect URI must match the deployed host exactly, including the Worker name (`2602test`, as set in `wrangler.toml`).
 
 Set the Worker secrets. `SESSION_SECRET` should be a cryptographically random value at least 32 characters long.
 
