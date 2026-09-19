@@ -17,7 +17,8 @@ const id = () => crypto.randomUUID();
 // Cookie values may not contain `"` or `,` (RFC 6265), so every signed payload travels base64url-encoded.
 const pack = (value: unknown) => base64url(encoder.encode(JSON.stringify(value)));
 const unpack = <T>(raw: string): T => JSON.parse(new TextDecoder().decode(decodeBase64url(raw))) as T;
-const configured = (env: Env) => Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.SESSION_SECRET);
+const SECRET_KEYS = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "SESSION_SECRET"] as const;
+const configured = (env: Env) => SECRET_KEYS.every((key) => Boolean(env[key]));
 const CONFIG_MESSAGE = "서버에 Google 로그인 설정이 없습니다. GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / SESSION_SECRET 시크릿을 설정해 주세요.";
 
 export default {
@@ -142,12 +143,13 @@ async function getSession(request: Request, env: Env): Promise<Session | null> {
 // Visitable in a browser to confirm the Worker -- not the asset router -- answered the
 // request. Reports only whether each dependency is reachable, never any secret value.
 async function health(env: Env): Promise<Response> {
+  const missing = SECRET_KEYS.filter((key) => !env[key]);
   let db = "ok";
   try { await env.DB.prepare("SELECT 1 FROM users LIMIT 1").all(); }
   catch (cause) { db = `실패 (${cause instanceof Error ? cause.message : String(cause)})`; }
   const lines = [
     "worker: ok (이 글이 보이면 Worker가 요청을 처리한 것입니다)",
-    `secrets: ${configured(env) ? "ok" : "누락 - GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / SESSION_SECRET 확인"}`,
+    `secrets: ${missing.length ? `누락 - ${missing.join(", ")}` : "ok"}`,
     `d1: ${db}`,
   ];
   return new Response(lines.join("\n") + "\n", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
