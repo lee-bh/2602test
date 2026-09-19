@@ -6,9 +6,11 @@ compatibility_date = "2026-09-19"
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-# Without this, "single-page-application" serves index.html for every navigation that
-# does not match an asset -- including /auth/google -- and the Worker is never invoked.
-run_worker_first = [ "/auth/*", "/api/*" ]
+# Every request goes to the Worker, which serves assets itself via env.ASSETS.fetch().
+# The route-pattern form of this option needs Wrangler >= 4.20 and was silently dropped
+# by the deploy, so /auth/google kept being answered with index.html by the asset router.
+# The boolean form has no version floor and keeps routing decided by src/index.ts.
+run_worker_first = true
 
 [[d1_databases]]
 binding = "DB"

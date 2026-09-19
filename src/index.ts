@@ -24,6 +24,7 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     try {
+      if (url.pathname === "/health") return health(env);
       if (url.pathname === "/auth/google") return beginGoogleLogin(request, env);
       if (url.pathname === "/auth/google/callback") return finishGoogleLogin(request, env);
       if (url.pathname === "/auth/logout" && request.method === "POST") return logout(url);
@@ -138,6 +139,19 @@ function cookie(request: Request, name: string) { return request.headers.get("Co
 function cookieHeader(name: string, value: string, maxAge?: number) { return `${name}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax${maxAge !== undefined ? `; Max-Age=${maxAge}` : ""}`; }
 async function getSession(request: Request, env: Env): Promise<Session | null> { if (!env.SESSION_SECRET) return null; const raw = await verifySigned(cookie(request, "diary_session"), env.SESSION_SECRET); if (!raw) return null; try { const session = unpack<Session>(raw); return session.exp > Date.now() / 1000 ? session : null; } catch { return null; } }
 
+// Visitable in a browser to confirm the Worker -- not the asset router -- answered the
+// request. Reports only whether each dependency is reachable, never any secret value.
+async function health(env: Env): Promise<Response> {
+  let db = "ok";
+  try { await env.DB.prepare("SELECT 1 FROM users LIMIT 1").all(); }
+  catch (cause) { db = `실패 (${cause instanceof Error ? cause.message : String(cause)})`; }
+  const lines = [
+    "worker: ok (이 글이 보이면 Worker가 요청을 처리한 것입니다)",
+    `secrets: ${configured(env) ? "ok" : "누락 - GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / SESSION_SECRET 확인"}`,
+    `d1: ${db}`,
+  ];
+  return new Response(lines.join("\n") + "\n", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+}
 async function beginGoogleLogin(request: Request, env: Env): Promise<Response> {
   if (!configured(env)) return loginFailed(CONFIG_MESSAGE);
   const state = base64url(crypto.getRandomValues(new Uint8Array(24)));
