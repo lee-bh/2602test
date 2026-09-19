@@ -2,6 +2,12 @@ name = "2602test"
 main = "src/index.ts"
 compatibility_date = "2026-09-19"
 
+# GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / SESSION_SECRET are set in the dashboard and
+# must not live in this file. Wrangler otherwise treats this file as the source of truth
+# and deletes dashboard-set values on every deploy, which is what left the deployed
+# Worker with only the ASSETS/DB/IMAGES bindings and no Google credentials.
+keep_vars = true
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
