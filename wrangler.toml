@@ -1,4 +1,4 @@
-name = "worker-diary"
+name = "2602test"
 main = "src/index.ts"
 compatibility_date = "2026-09-19"
 
@@ -6,6 +6,9 @@ compatibility_date = "2026-09-19"
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+# Without this, "single-page-application" serves index.html for every navigation that
+# does not match an asset -- including /auth/google -- and the Worker is never invoked.
+run_worker_first = [ "/auth/*", "/api/*" ]
 
 [[d1_databases]]
 binding = "DB"
