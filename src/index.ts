@@ -150,6 +150,9 @@ async function health(env: Env): Promise<Response> {
   const lines = [
     "worker: ok (이 글이 보이면 Worker가 요청을 처리한 것입니다)",
     `secrets: ${missing.length ? `누락 - ${missing.join(", ")}` : "ok"}`,
+    `secret 상세: ${SECRET_KEYS.map((key) => `${key}=${!(key in env) ? "바인딩 없음" : env[key] ? "값 있음" : "값이 빈 문자열"}`).join(", ")}`,
+    // Names only, never values: a name with stray whitespace shows up in the quotes.
+    `런타임 바인딩 이름: ${JSON.stringify(Object.keys(env).sort())}`,
     `d1: ${db}`,
   ];
   return new Response(lines.join("\n") + "\n", { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
