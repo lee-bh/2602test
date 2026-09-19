@@ -10,7 +10,7 @@ npx wrangler d1 create worker-diary
 npx wrangler r2 bucket create worker-diary-images
 ```
 
-Copy the D1 `database_id` to `wrangler.toml`, then apply the schema:
+The configured D1 database is `leebh-first` (`42bf2fd6-f5d4-4462-a2a6-d28171c8fa1a`). Apply the schema with:
 
 ```bash
 npx wrangler d1 migrations apply worker-diary --remote

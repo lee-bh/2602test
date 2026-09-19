@@ -9,8 +9,8 @@ not_found_handling = "single-page-application"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "worker-diary"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_name = "leebh-first"
+database_id = "42bf2fd6-f5d4-4462-a2a6-d28171c8fa1a"
 migrations_dir = "migrations"
 
 [[r2_buckets]]
