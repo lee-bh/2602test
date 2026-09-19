@@ -22,7 +22,7 @@
       <div class="layout"><aside id="entry-list" aria-label="일기 목록"></aside><article id="editor" class="card empty"><p>왼쪽에서 기록을 선택하거나<br>새 일기를 시작하세요.</p></article></div>
     </section>
   </main>
-  <template id="editor-template"><form class="editor-form"><div class="editor-top"><input name="entryDate" type="date" required><button type="button" class="icon-button delete" title="삭제">삭제</button></div><input name="title" class="title-input" maxlength="200" placeholder="오늘의 제목" required><textarea name="body" maxlength="20000" placeholder="오늘 있었던 일, 떠오른 생각을 자유롭게 적어보세요."></textarea><div class="form-bottom"><label class="upload"><input type="file" accept="image/*"> 사진 추가</label><span class="hint">이미지는 본인만 볼 수 있습니다.</span><button class="button" type="submit">저장하기 <span>→</span></button></div><p class="message" aria-live="polite"></p></form></template>
+  <template id="editor-template"><form class="editor-form"><div class="editor-top"><input name="entryDate" type="date" required><button type="button" class="icon-button delete" title="삭제">삭제</button></div><input name="title" class="title-input" maxlength="200" placeholder="오늘의 제목" required><textarea name="body" maxlength="20000" placeholder="오늘 있었던 일, 떠오른 생각을 자유롭게 적어보세요."></textarea><div class="images" hidden></div><div class="form-bottom"><label class="upload"><input type="file" accept="image/*"> 사진 추가</label><span class="hint">이미지는 본인만 볼 수 있습니다.</span><button class="button" type="submit">저장하기 <span>→</span></button></div><p class="message" aria-live="polite"></p></form></template>
   <script type="module" src="/app.js"></script>
 </body>
 </html>
