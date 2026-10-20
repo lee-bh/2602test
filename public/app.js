@@ -1,50 +1,221 @@
-const $ = (selector) => document.querySelector(selector);
-let entries = []; let active = null;
-const api = async (path, options = {}) => { const response = await fetch(path, options); if (!response.ok) { const error = new Error((await response.json().catch(() => ({}))).error || '요청에 실패했습니다.'); error.status = response.status; throw error; } return response.status === 204 ? null : response.json(); };
-const escapeHtml = (value) => value.replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
-const today = () => new Date().toISOString().slice(0, 10);
-// Uploads are stored in the body as ![name](/api/images/<id>); the editor draws them below.
+const $ = (id) => document.getElementById(id);
+const api = async (path, options = {}) => {
+  const response = await fetch(path, options);
+  if (!response.ok) {
+    const error = new Error((await response.json().catch(() => ({}))).error || '요청에 실패했습니다.');
+    error.status = response.status;
+    throw error;
+  }
+  return response.status === 204 ? null : response.json();
+};
+// Uploads live in the body as ![name](/api/images/<id>); the list shows them as pictures
+// and keeps the markdown itself out of the text.
 const IMAGE_MARKDOWN = /!\[([^\]]*)\]\((\/api\/images\/[\w-]+)\)/g;
-const snippet = (body) => body.replace(IMAGE_MARKDOWN, '').replace(/\s+/g, ' ').trim().slice(0, 54);
-function renderImages(form) {
-  const box = form.querySelector('.images');
-  const found = [...form.body.value.matchAll(IMAGE_MARKDOWN)];
-  box.hidden = !found.length;
-  box.innerHTML = found.map(([, alt, url]) => `<a href="${url}" target="_blank" rel="noreferrer"><img src="${url}" alt="${escapeHtml(alt)}" loading="lazy"></a>`).join('');
+const stripImages = (body) => body.replace(IMAGE_MARKDOWN, '').replace(/\n{3,}/g, '\n\n').trim();
+const today = () => new Date().toISOString().slice(0, 10);
+
+const entryContainer = $('entryContainer');
+const writeForm = $('writeForm');
+const dateInput = $('entryDate');
+const titleInput = $('entryTitle');
+const textInput = $('entryText');
+const saveButton = $('saveButton');
+const cancelButton = $('cancelButton');
+const photoButton = $('photoButton');
+const photoInput = photoButton.querySelector('input');
+const formMessage = $('formMessage');
+
+let entries = [];
+// id of the entry being edited; null means new-entry mode
+let editingId = null;
+
+function renderEntries() {
+  entryContainer.innerHTML = '';
+  for (const entry of entries) {
+    const section = document.createElement('section');
+    section.classList.add('entry');
+    section.dataset.id = entry.id;
+
+    const date = document.createElement('p');
+    date.textContent = entry.entry_date.replaceAll('-', '. ');
+    section.appendChild(date);
+
+    const title = document.createElement('h2');
+    // textContent so < and > typed into an entry are not read as tags
+    title.textContent = entry.title || '';
+    section.appendChild(title);
+
+    const body = document.createElement('p');
+    body.classList.add('entry-body');
+    body.textContent = stripImages(entry.body);
+    section.appendChild(body);
+
+    const images = [...entry.body.matchAll(IMAGE_MARKDOWN)];
+    if (images.length) {
+      const box = document.createElement('div');
+      box.classList.add('entry-images');
+      for (const [, alt, url] of images) {
+        const image = document.createElement('img');
+        image.src = url;
+        image.alt = alt;
+        image.loading = 'lazy';
+        box.appendChild(image);
+      }
+      section.appendChild(box);
+    }
+
+    const remove = document.createElement('button');
+    remove.classList.add('delete-button');
+    remove.textContent = '지우기';
+    section.appendChild(remove);
+
+    const edit = document.createElement('button');
+    edit.classList.add('edit-button');
+    edit.textContent = '수정하기';
+    section.appendChild(edit);
+
+    entryContainer.appendChild(section);
+  }
+  markEditingEntry();
 }
 
-function renderList() {
-  $('#entry-list').innerHTML = entries.length ? entries.map((entry) => `<button class="entry ${entry.id === active?.id ? 'selected' : ''}" data-id="${entry.id}"><time>${entry.entry_date.replaceAll('-', '.')}</time><strong>${escapeHtml(entry.title || '제목 없는 기록')}</strong><span>${escapeHtml(snippet(entry.body))}</span></button>`).join('') : '<p class="no-entries">아직 기록이 없어요.<br>오늘의 한 줄부터 시작해 보세요.</p>';
-  document.querySelectorAll('.entry').forEach((button) => button.onclick = () => openEntry(entries.find((entry) => entry.id === button.dataset.id)));
+function markEditingEntry() {
+  entryContainer.querySelectorAll('.entry').forEach((section) => {
+    section.classList.toggle('is-editing', section.dataset.id === editingId);
+  });
 }
-function openEntry(entry) {
-  active = entry; renderList();
-  const fragment = $('#editor-template').content.cloneNode(true); const form = fragment.querySelector('form');
-  form.entryDate.value = entry.entry_date; form.title.value = entry.title; form.body.value = entry.body;
-  renderImages(form); form.body.oninput = () => renderImages(form);
-  form.querySelector('.delete').onclick = async () => { if (!confirm('이 기록을 삭제할까요?')) return; await api(`/api/entries/${entry.id}`, { method: 'DELETE' }); entries = entries.filter((item) => item.id !== entry.id); active = null; renderList(); $('#editor').className = 'card empty'; $('#editor').innerHTML = '<p>기록이 삭제되었습니다.<br>새로운 기록을 시작해 보세요.</p>'; };
-  form.querySelector('input[type=file]').onchange = async (event) => { const file = event.target.files[0]; if (!file) return; const message = form.querySelector('.message'); message.textContent = '사진을 올리는 중…'; try { const data = new FormData(); data.append('image', file); data.append('entryId', entry.id); const result = await api('/api/images', { method: 'POST', body: data }); form.body.value += `${form.body.value ? '\n\n' : ''}![${file.name}](${result.image.url})`; renderImages(form); message.textContent = '사진 링크를 본문에 추가했습니다. 저장해 주세요.'; } catch (error) { message.textContent = error.message; } };
-  form.onsubmit = async (event) => { event.preventDefault(); const message = form.querySelector('.message'); const payload = { entryDate: form.entryDate.value, title: form.title.value, body: form.body.value }; try { await api(`/api/entries/${entry.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); Object.assign(entry, { entry_date: payload.entryDate, title: payload.title, body: payload.body }); entries.sort((a, b) => b.entry_date.localeCompare(a.entry_date)); renderList(); message.textContent = '저장했습니다.'; } catch (error) { message.textContent = error.message; } };
-  $('#editor').className = 'card'; $('#editor').replaceChildren(fragment);
+
+function enterEditMode(entryId) {
+  editingId = entryId;
+  saveButton.textContent = '수정하기';
+  cancelButton.hidden = false;
+  // Uploads attach to an entry that already exists, so photos wait until after the first save.
+  photoButton.hidden = false;
+  markEditingEntry();
 }
-async function createEntry() { try { const result = await api('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ entryDate: today(), title: '', body: '' }) }); entries.unshift(result.entry); openEntry(result.entry); } catch (error) { alert(error.message); } }
-function showLogin(message) {
-  $('#loading').hidden = true; $('#login').hidden = false;
-  const reason = message || new URLSearchParams(location.search).get('login_error');
-  if (reason) $('#login-message').textContent = reason;
-  if (location.search) history.replaceState(null, '', location.pathname);
+
+function exitEditMode() {
+  editingId = null;
+  dateInput.value = today();
+  titleInput.value = '';
+  textInput.value = '';
+  saveButton.textContent = '저장하기';
+  cancelButton.hidden = true;
+  photoButton.hidden = true;
+  formMessage.textContent = '';
+  markEditingEntry();
 }
-async function start() {
-  let user;
-  try { ({ user } = await api('/api/me')); }
-  catch (error) { showLogin(error.status === 401 ? null : error.message); return; }
-  $('#account').innerHTML = `<span class="user">${escapeHtml(user.name)}</span><button class="logout">로그아웃</button>`;
-  $('.logout').onclick = async () => { await api('/auth/logout', { method: 'POST' }); location.reload(); };
+
+// The list is redrawn on every change, so listen once on the container
+// instead of binding a listener per button.
+entryContainer.addEventListener('click', (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  const section = button.closest('.entry');
+  if (!section) return;
+  if (button.classList.contains('delete-button')) deleteEntry(section.dataset.id);
+  else if (button.classList.contains('edit-button')) editEntry(section.dataset.id);
+});
+
+saveButton.addEventListener('click', onSave);
+cancelButton.addEventListener('click', exitEditMode);
+
+function editEntry(entryId) {
+  const entry = entries.find((item) => item.id === entryId);
+  if (!entry) return;
+  dateInput.value = entry.entry_date;
+  titleInput.value = entry.title;
+  // the raw body, image markdown included, so saving does not drop the photos
+  textInput.value = entry.body;
+  enterEditMode(entryId);
+  titleInput.focus();
+}
+
+async function onSave() {
+  const payload = { entryDate: dateInput.value, title: titleInput.value.trim(), body: textInput.value };
+  if (!payload.entryDate) { formMessage.textContent = '날짜를 넣어주세요.'; return; }
+  if (!payload.title && !payload.body.trim()) return;
+  // lock the button so one entry cannot be posted twice
+  saveButton.disabled = true;
+  formMessage.textContent = '';
   try {
-    const data = await api('/api/entries');
-    entries = data.entries;
-  } catch (error) { showLogin(error.message); return; }
-  $('#loading').hidden = true; $('#app').hidden = false; renderList();
-  $('#new-entry').onclick = createEntry;
+    if (editingId) await api(`/api/entries/${editingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    else await api('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    exitEditMode();
+    await loadEntries();
+  } catch (error) {
+    formMessage.textContent = error.message;
+  } finally {
+    saveButton.disabled = false;
+  }
 }
+
+async function deleteEntry(entryId) {
+  if (!window.confirm('이 기록을 지울까요?')) return;
+  try {
+    await api(`/api/entries/${entryId}`, { method: 'DELETE' });
+  } catch (error) {
+    formMessage.textContent = error.message;
+    return;
+  }
+  if (editingId === entryId) exitEditMode();
+  await loadEntries();
+}
+
+photoInput.addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+  if (!file || !editingId) return;
+  formMessage.textContent = '사진을 올리는 중…';
+  try {
+    const data = new FormData();
+    data.append('image', file);
+    data.append('entryId', editingId);
+    const result = await api('/api/images', { method: 'POST', body: data });
+    textInput.value += `${textInput.value ? '\n\n' : ''}![${file.name}](${result.image.url})`;
+    formMessage.textContent = '사진을 넣었습니다. 저장해 주세요.';
+  } catch (error) {
+    formMessage.textContent = error.message;
+  } finally {
+    event.target.value = '';
+  }
+});
+
+$('signInButton').addEventListener('click', () => { location.href = '/auth/google'; });
+$('signOutButton').addEventListener('click', async () => {
+  await api('/auth/logout', { method: 'POST' }).catch(() => {});
+  location.reload();
+});
+
+function showNotice(text) {
+  const notice = document.createElement('p');
+  notice.classList.add('notice');
+  notice.textContent = text;
+  entryContainer.replaceChildren(notice);
+}
+
+async function loadEntries() {
+  entries = (await api('/api/entries')).entries;
+  renderEntries();
+}
+
+async function start() {
+  try {
+    await api('/api/me');
+  } catch (error) {
+    $('signInButton').hidden = false;
+    const reason = error.status === 401 ? null : error.message;
+    showNotice(reason || new URLSearchParams(location.search).get('login_error') || '나만 볼 수 있는 일기장입니다. 구글로그인을 눌러 시작하세요.');
+    if (location.search) history.replaceState(null, '', location.pathname);
+    return;
+  }
+  $('signOutButton').hidden = false;
+  writeForm.hidden = false;
+  exitEditMode();
+  try {
+    await loadEntries();
+  } catch (error) {
+    showNotice(error.message);
+  }
+}
+
 start();
