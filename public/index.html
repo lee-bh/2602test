@@ -17,10 +17,12 @@
   <section id="writeForm" hidden>
     <input type="text" id="entryTitle" placeholder="제목을 넣고">
     <textarea id="entryText" placeholder="글을 작성해보세요"></textarea>
-    <p id="formMessage" aria-live="polite"></p>
-    <div id="formButtons">
+    <div id="photoStrip" hidden></div>
+    <div id="formBottom">
+      <p id="formMessage" aria-live="polite"></p>
       <input type="date" id="entryDate">
-      <label id="photoButton" hidden>사진<input type="file" accept="image/*"></label>
+      <button type="button" id="photoButton" aria-label="사진 올리기" title="사진 올리기"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="8.5" cy="10" r="1.5"/><path d="M4 17.5l4.5-4.5 3 3 3.5-3.5L20 17"/></svg></button>
+      <input type="file" id="photoInput" accept="image/*" hidden>
       <button id="cancelButton" hidden>취소</button>
       <button id="saveButton">저장하기</button>
     </div>

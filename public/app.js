@@ -22,7 +22,8 @@ const textInput = $('entryText');
 const saveButton = $('saveButton');
 const cancelButton = $('cancelButton');
 const photoButton = $('photoButton');
-const photoInput = photoButton.querySelector('input');
+const photoInput = $('photoInput');
+const photoStrip = $('photoStrip');
 const formMessage = $('formMessage');
 
 let entries = [];
@@ -89,8 +90,6 @@ function enterEditMode(entryId) {
   editingId = entryId;
   saveButton.textContent = '수정하기';
   cancelButton.hidden = false;
-  // Uploads attach to an entry that already exists, so photos wait until after the first save.
-  photoButton.hidden = false;
   markEditingEntry();
 }
 
@@ -101,8 +100,8 @@ function exitEditMode() {
   textInput.value = '';
   saveButton.textContent = '저장하기';
   cancelButton.hidden = true;
-  photoButton.hidden = true;
   formMessage.textContent = '';
+  clearPhotoStrip();
   markEditingEntry();
 }
 
@@ -162,21 +161,91 @@ async function deleteEntry(entryId) {
   await loadEntries();
 }
 
-photoInput.addEventListener('change', async (event) => {
-  const file = event.target.files[0];
-  if (!file || !editingId) return;
-  formMessage.textContent = '사진을 올리는 중…';
+// Photos are shrunk in the browser before upload: a phone picture is several thousand
+// pixels wide, far more than the 550px column ever shows.
+const MAX_WIDTH = 800;
+async function shrink(file) {
+  // An animated GIF would come back as a single frame, so leave it alone.
+  if (file.type === 'image/gif') return file;
+  let bitmap;
   try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    return file; // unreadable by the canvas path; let the server take the original
+  }
+  if (bitmap.width <= MAX_WIDTH) { bitmap.close?.(); return file; }
+  const canvas = document.createElement('canvas');
+  canvas.width = MAX_WIDTH;
+  canvas.height = Math.round((bitmap.height * MAX_WIDTH) / bitmap.width);
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+  if (!blob) return file;
+  return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+}
+
+// Object URLs for the thumbnails, released when the form is reset.
+let photoUrls = [];
+function clearPhotoStrip() {
+  for (const url of photoUrls) URL.revokeObjectURL(url);
+  photoUrls = [];
+  photoStrip.replaceChildren();
+  photoStrip.hidden = true;
+}
+
+function addPhotoChip(file, markdown) {
+  const url = URL.createObjectURL(file);
+  photoUrls.push(url);
+  const chip = document.createElement('div');
+  chip.classList.add('photo-chip');
+  const thumb = document.createElement('img');
+  thumb.src = url;
+  thumb.alt = file.name;
+  chip.appendChild(thumb);
+  const insert = document.createElement('button');
+  insert.type = 'button';
+  insert.textContent = '넣기';
+  insert.addEventListener('click', () => insertAtCursor(markdown));
+  chip.appendChild(insert);
+  photoStrip.appendChild(chip);
+  photoStrip.hidden = false;
+}
+
+// Drop the text where the caret was left, not at the end.
+function insertAtCursor(text) {
+  const start = textInput.selectionStart ?? textInput.value.length;
+  const end = textInput.selectionEnd ?? textInput.value.length;
+  const before = textInput.value.slice(0, start);
+  const after = textInput.value.slice(end);
+  const padded = `${before && !before.endsWith('\n') ? '\n' : ''}${text}${after && !after.startsWith('\n') ? '\n' : ''}`;
+  textInput.value = before + padded + after;
+  const caret = start + padded.length;
+  textInput.focus();
+  textInput.setSelectionRange(caret, caret);
+  formMessage.textContent = '본문에 넣었습니다. 저장해 주세요.';
+}
+
+photoButton.addEventListener('click', () => photoInput.click());
+
+photoInput.addEventListener('change', async (event) => {
+  const picked = event.target.files[0];
+  event.target.value = '';
+  if (!picked) return;
+  formMessage.textContent = '사진을 올리는 중…';
+  photoButton.disabled = true;
+  try {
+    const file = await shrink(picked);
     const data = new FormData();
     data.append('image', file);
-    data.append('entryId', editingId);
+    // While composing there is no entry yet; the server links the photo when it is saved.
+    if (editingId) data.append('entryId', editingId);
     const result = await api('/api/images', { method: 'POST', body: data });
-    textInput.value += `${textInput.value ? '\n\n' : ''}![${file.name}](${result.image.url})`;
-    formMessage.textContent = '사진을 넣었습니다. 저장해 주세요.';
+    addPhotoChip(file, `![${picked.name}](${result.image.url})`);
+    formMessage.textContent = '넣기를 누르면 커서 위치에 들어갑니다.';
   } catch (error) {
     formMessage.textContent = error.message;
   } finally {
-    event.target.value = '';
+    photoButton.disabled = false;
   }
 });
 
