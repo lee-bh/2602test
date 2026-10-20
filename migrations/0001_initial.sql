@@ -15,8 +15,7 @@ CREATE TABLE IF NOT EXISTS entries (
   title TEXT NOT NULL,
   body TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, entry_date)
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS entries_by_user_date ON entries(user_id, entry_date DESC);
 

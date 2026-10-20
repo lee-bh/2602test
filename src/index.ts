@@ -49,7 +49,7 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
     return user ? json({ user }) : error("사용자를 찾을 수 없습니다.", 401);
   }
   if (path === "/api/entries" && request.method === "GET") {
-    const entries = await env.DB.prepare("SELECT * FROM entries WHERE user_id = ? ORDER BY entry_date DESC").bind(session.userId).all<Entry>();
+    const entries = await env.DB.prepare("SELECT * FROM entries WHERE user_id = ? ORDER BY entry_date DESC, created_at DESC, id DESC").bind(session.userId).all<Entry>();
     return json({ entries: entries.results });
   }
   if (path === "/api/entries" && request.method === "POST") return createEntry(request, env, session.userId);
@@ -81,7 +81,7 @@ async function createEntry(request: Request, env: Env, userId: string): Promise<
   try {
     await env.DB.prepare("INSERT INTO entries (id, user_id, entry_date, title, body) VALUES (?, ?, ?, ?, ?)")
       .bind(entryId, userId, input.entryDate, input.title.trim(), input.body).run();
-  } catch { return error("해당 날짜의 일기는 이미 있습니다.", 409); }
+  } catch (cause) { console.error(cause); return error("일기를 저장하지 못했습니다.", 500); }
   return json({ entry: { id: entryId, entry_date: input.entryDate, title: input.title.trim(), body: input.body } }, 201);
 }
 async function updateEntry(request: Request, env: Env, userId: string, entryId: string): Promise<Response> {
