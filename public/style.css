@@ -18,18 +18,27 @@ footer{padding-bottom: 50vh;}
 .entry-images{padding-bottom: 1rem;}
 .entry-images img{display:block; max-width: 100%; margin-bottom: 0.5rem;}
 .notice{padding: 2rem 0;}
-button, input, textarea, #photoButton{color:black; line-height: 1.7; font-size: 1rem; font-family: 'Gowun Batang', serif;
+button, input, textarea{color:black; line-height: 1.7; font-size: 1rem; font-family: 'Gowun Batang', serif;
 word-break: keep-all; border:none; background:var(--color-point); outline:none;}
-button:hover, #photoButton:hover{background:black; color:white;}
-button, #photoButton{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
-#photoButton input{display:none;}
-#writeForm { position: fixed; left: calc(50% - 275px - 1rem); bottom: 0; width: calc(550px + 2rem);}
-#entryTitle, #entryText {border:none; background:var(--color-point); width: 100%; padding:1rem;}
+button:hover{background:black; color:white;}
+button{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
+
+/* The form carries the panel colour so the inputs and the bottom row read as one block. */
+#writeForm { position: fixed; left: calc(50% - 275px - 1rem); bottom: 0; width: calc(550px + 2rem);
+background:var(--color-point);}
+#entryTitle, #entryText {border:none; background:transparent; width: 100%; padding:1rem;}
 #entryTitle{padding-bottom:0;}
-#entryDate{width:auto; font-size: 0.9rem; color-scheme: light;}
-#entryText{height:12rem; word-spacing: -0.1rem; padding-top:0;}
-#formMessage{position:absolute; left:1rem; bottom:1rem; margin:0; font-size:0.8rem;}
-#formButtons{position: absolute; right: 1rem; bottom: 1rem;}
+#entryText{height:12rem; word-spacing: -0.1rem; padding-top:0; padding-bottom:0.5rem;}
+#entryDate{width:auto; font-size: 0.9rem; color-scheme: light; background:transparent;}
+/* Uploaded, not yet placed in the text. */
+#photoStrip{display:flex; gap:0.75rem; align-items:center; padding:0 1rem 0.5rem; overflow-x:auto;}
+#photoStrip[hidden]{display:none;}
+.photo-chip{display:flex; align-items:center; gap:0.3rem; flex:none;}
+.photo-chip img{width:2.4rem; height:2.4rem; object-fit:cover; display:block;}
+.photo-chip button{font-size:0.8rem; margin:0;}
+#formBottom{display:flex; align-items:center; padding:0 1rem 1rem;}
+#formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
+#photoButton{display:inline-flex; align-items:center; padding:0.25rem 0.5rem;}
 #saveButton{margin-right: 0;}
 
 @media (max-width: 550px) {
@@ -39,8 +48,8 @@ button, #photoButton{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: point
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm {left: 0px; width: 100vw;}
     #entryDate, #entryTitle, #entryText{color:#eee;}
-    #entryDate{color-scheme: dark; background:var(--color-point);}
+    #entryDate{color-scheme: dark;}
     #entryText{height: 10rem;}
-    button, #photoButton{color:#eee;}
-    button:hover, #photoButton:hover{background:white; color:black;}
+    button{color:#eee;}
+    button:hover{background:white; color:black;}
 }

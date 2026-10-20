@@ -82,6 +82,7 @@ async function createEntry(request: Request, env: Env, userId: string): Promise<
     await env.DB.prepare("INSERT INTO entries (id, user_id, entry_date, title, body) VALUES (?, ?, ?, ?, ?)")
       .bind(entryId, userId, input.entryDate, input.title.trim(), input.body).run();
   } catch (cause) { console.error(cause); return error("일기를 저장하지 못했습니다.", 500); }
+  await linkImages(env, userId, entryId, input.body);
   return json({ entry: { id: entryId, entry_date: input.entryDate, title: input.title.trim(), body: input.body } }, 201);
 }
 async function updateEntry(request: Request, env: Env, userId: string, entryId: string): Promise<Response> {
@@ -90,6 +91,7 @@ async function updateEntry(request: Request, env: Env, userId: string, entryId: 
   const result = await env.DB.prepare("UPDATE entries SET entry_date = ?, title = ?, body = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?")
     .bind(input.entryDate, input.title.trim(), input.body, entryId, userId).run();
   if (!result.meta.changes) return error("일기를 찾을 수 없습니다.", 404);
+  await linkImages(env, userId, entryId, input.body);
   return json({ ok: true });
 }
 async function deleteEntry(env: Env, userId: string, entryId: string, ctx: ExecutionContext): Promise<Response> {
@@ -106,11 +108,17 @@ async function uploadImage(request: Request, env: Env, userId: string): Promise<
   const file = form.get("image");
   const entryId = form.get("entryId");
   if (!(file instanceof File) || !file.type.startsWith("image/") || file.size > 8 * 1024 * 1024) return error("8MB 이하의 이미지 파일만 올릴 수 있습니다.");
-  if (typeof entryId !== "string" || !(await ownedEntry(env, userId, entryId))) return error("일기를 찾을 수 없습니다.", 404);
+  // A photo can be uploaded while composing, before the entry exists. It is linked when
+  // the entry is saved; until then entry_id stays null.
+  let entry: string | null = null;
+  if (typeof entryId === "string" && entryId) {
+    if (!(await ownedEntry(env, userId, entryId))) return error("일기를 찾을 수 없습니다.", 404);
+    entry = entryId;
+  }
   const imageId = id(); const key = `${userId}/${imageId}`;
   await env.IMAGES.put(key, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: { originalName: file.name } });
   await env.DB.prepare("INSERT INTO images (id, user_id, entry_id, object_key, content_type, size) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(imageId, userId, entryId, key, file.type, file.size).run();
+    .bind(imageId, userId, entry, key, file.type, file.size).run();
   return json({ image: { id: imageId, url: `/api/images/${imageId}` } }, 201);
 }
 async function getImage(request: Request, env: Env, userId: string, imageId: string): Promise<Response> {
@@ -128,6 +136,11 @@ async function deleteImage(env: Env, userId: string, imageId: string): Promise<R
   await Promise.all([env.DB.prepare("DELETE FROM images WHERE id = ? AND user_id = ?").bind(imageId, userId).run(), env.IMAGES.delete(image.object_key)]);
   return new Response(null, { status: 204 });
 }
+// Claim the photos this body references that were uploaded before the entry existed, so
+// deleting the entry still clears them from R2.
+const linkImages = (env: Env, userId: string, entryId: string, body: string) =>
+  env.DB.prepare("UPDATE images SET entry_id = ? WHERE user_id = ? AND entry_id IS NULL AND instr(?, '/api/images/' || id) > 0")
+    .bind(entryId, userId, body).run();
 const ownedEntry = async (env: Env, userId: string, entryId: string) => Boolean(await env.DB.prepare("SELECT id FROM entries WHERE id = ? AND user_id = ?").bind(entryId, userId).first());
 
 function base64url(bytes: Uint8Array) { return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, ""); }
