@@ -11,7 +11,6 @@ const api = async (path, options = {}) => {
 // Uploads live in the body as ![name](/api/images/<id>); the list shows them as pictures
 // and keeps the markdown itself out of the text.
 const IMAGE_MARKDOWN = /!\[([^\]]*)\]\((\/api\/images\/[\w-]+)\)/g;
-const stripImages = (body) => body.replace(IMAGE_MARKDOWN, '').replace(/\n{3,}/g, '\n\n').trim();
 const today = () => new Date().toISOString().slice(0, 10);
 
 const entryContainer = $('entryContainer');
@@ -30,6 +29,33 @@ let entries = [];
 // id of the entry being edited; null means new-entry mode
 let editingId = null;
 
+// Walk the body in order so a photo lands between the paragraphs it was written between,
+// rather than every photo being collected at the end.
+function appendBody(section, body) {
+  let cursor = 0;
+  for (const match of body.matchAll(IMAGE_MARKDOWN)) {
+    appendText(section, body.slice(cursor, match.index));
+    const image = document.createElement('img');
+    image.classList.add('entry-image');
+    image.src = match[2];
+    image.alt = match[1];
+    image.loading = 'lazy';
+    section.appendChild(image);
+    cursor = match.index + match[0].length;
+  }
+  appendText(section, body.slice(cursor));
+}
+
+function appendText(section, text) {
+  // Blank lines around a photo are what separated it from the text, not content.
+  const trimmed = text.replace(/^\n+|\n+$/g, '');
+  if (!trimmed) return;
+  const paragraph = document.createElement('p');
+  paragraph.classList.add('entry-body');
+  paragraph.textContent = trimmed;
+  section.appendChild(paragraph);
+}
+
 function renderEntries() {
   entryContainer.innerHTML = '';
   for (const entry of entries) {
@@ -46,24 +72,7 @@ function renderEntries() {
     title.textContent = entry.title || '';
     section.appendChild(title);
 
-    const body = document.createElement('p');
-    body.classList.add('entry-body');
-    body.textContent = stripImages(entry.body);
-    section.appendChild(body);
-
-    const images = [...entry.body.matchAll(IMAGE_MARKDOWN)];
-    if (images.length) {
-      const box = document.createElement('div');
-      box.classList.add('entry-images');
-      for (const [, alt, url] of images) {
-        const image = document.createElement('img');
-        image.src = url;
-        image.alt = alt;
-        image.loading = 'lazy';
-        box.appendChild(image);
-      }
-      section.appendChild(box);
-    }
+    appendBody(section, entry.body);
 
     const remove = document.createElement('button');
     remove.classList.add('delete-button');

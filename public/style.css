@@ -15,8 +15,7 @@ footer{padding-bottom: 50vh;}
 .entry p{padding-bottom: 1rem; word-spacing: -0.1rem;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
-.entry-images{padding-bottom: 1rem;}
-.entry-images img{display:block; max-width: 100%; margin-bottom: 0.5rem;}
+.entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
 .notice{padding: 2rem 0;}
 button, input, textarea{color:black; line-height: 1.7; font-size: 1rem; font-family: 'Gowun Batang', serif;
 word-break: keep-all; border:none; background:var(--color-point); outline:none;}
