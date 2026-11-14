@@ -56,6 +56,11 @@ function appendText(section, text) {
   section.appendChild(paragraph);
 }
 
+// Entries the reader has opened, kept across redraws so saving or deleting one entry
+// does not fold every other entry back up.
+const openIds = new Set();
+
+// The feed is a list of titles; a title opens its entry in place.
 function renderEntries() {
   entryContainer.innerHTML = '';
   for (const entry of entries) {
@@ -63,20 +68,31 @@ function renderEntries() {
     section.classList.add('entry');
     section.dataset.id = entry.id;
 
-    const date = document.createElement('p');
-    date.textContent = entry.entry_date.replaceAll('-', '. ');
-    section.appendChild(date);
+    const details = document.createElement('details');
+    details.open = openIds.has(entry.id);
+    details.addEventListener('toggle', () => {
+      if (details.open) openIds.add(entry.id); else openIds.delete(entry.id);
+    });
 
+    const summary = document.createElement('summary');
     const title = document.createElement('h2');
     // textContent so < and > typed into an entry are not read as tags
-    title.textContent = entry.title || '';
-    section.appendChild(title);
+    title.textContent = entry.title || '(제목 없음)';
+    summary.appendChild(title);
+    const date = document.createElement('p');
+    date.classList.add('entry-date');
+    date.textContent = entry.entry_date.replaceAll('-', '. ');
+    summary.appendChild(date);
+    details.appendChild(summary);
 
-    appendBody(section, entry.body);
-
+    const content = document.createElement('div');
+    content.classList.add('entry-content');
+    appendBody(content, entry.body);
     // The feed is public; only the author gets the controls.
-    if (entry.mine) appendControls(section);
+    if (entry.mine) appendControls(content);
+    details.appendChild(content);
 
+    section.appendChild(details);
     entryContainer.appendChild(section);
   }
   if (!entries.length) showNotice('아직 올라온 기록이 없습니다.');

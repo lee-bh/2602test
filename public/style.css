@@ -10,9 +10,16 @@ header, main, footer, #writeForm{width: 550px; margin: 0 auto;}
 header{padding:4rem 0 2rem;}
 footer{padding-bottom: 50vh;}
 #entryContainer{padding:2rem 0rem;}
-.entry{padding: 2rem 0;}
+.entry{padding: 0.75rem 0;}
 .entry h2, #entryTitle{font-size: 1.5rem;}
 .entry p{padding-bottom: 1rem; word-spacing: -0.1rem;}
+/* Each title is the switch that opens its entry; the browser's triangle is dropped. */
+.entry summary{list-style: none; cursor: pointer;}
+.entry summary::-webkit-details-marker{display: none;}
+.entry summary:hover h2{text-decoration: underline; text-underline-offset: 0.3em; text-decoration-thickness: 1px;}
+.entry summary:focus-visible{outline: 1px dashed currentColor; outline-offset: 0.25rem;}
+.entry p.entry-date{font-size: 0.85rem; opacity: 0.6; padding-bottom: 0;}
+.entry-content{padding: 1.5rem 0 1rem;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
