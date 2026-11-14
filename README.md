@@ -1,6 +1,6 @@
 # Worker Diary
 
-A private diary that runs entirely on **Cloudflare Workers** (not Pages), with D1 for entries, R2 for images, and Google OAuth for sign-in.
+A diary feed that anyone can read without signing in. It runs entirely on **Cloudflare Workers** (not Pages), with D1 for entries, R2 for images, and Google OAuth for signing in to write.
 
 ## Provision Cloudflare resources
 
@@ -47,7 +47,9 @@ npm run deploy
 
 - `GET /auth/google` and `GET /auth/google/callback`: Google OAuth PKCE sign-in flow.
 - `POST /auth/logout`: signed-session logout.
-- `GET|POST /api/entries`, `PUT|DELETE /api/entries/:id`: authenticated diary CRUD.
-- `POST /api/images`, `GET /api/images/:id`, `DELETE /api/images/:id`: authenticated R2 uploads and image delivery.
+- `GET /api/entries`: public feed of every entry; no sign-in needed. Signed-in visitors also get `mine` on their own entries.
+- `POST /api/entries`, `PUT|DELETE /api/entries/:id`: authenticated; only the author can change an entry.
+- `GET /api/images/:id`: public for photos attached to an entry; a photo not yet saved with an entry is shown only to its uploader.
+- `POST /api/images`, `DELETE /api/images/:id`: authenticated R2 upload and delete.
 
-Images are never public R2 objects: the Worker checks the current user owns the image before streaming it from R2.
+Images are never public R2 objects: the Worker checks the image is attached to an entry, or belongs to the current user, before streaming it from R2.

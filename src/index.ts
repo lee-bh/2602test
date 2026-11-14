@@ -40,17 +40,18 @@ export default {
 
 async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const session = await getSession(request, env);
-  if (!session) return error("로그인이 필요합니다.", 401);
   const url = new URL(request.url);
   const path = url.pathname;
+  const imageMatch = path.match(/^\/api\/images\/([\w-]+)$/);
 
+  // Reading is public: the feed and the photos in it need no sign-in. Writing does.
+  if (path === "/api/entries" && request.method === "GET") return listEntries(env, session?.userId ?? null);
+  if (imageMatch && request.method === "GET") return getImage(request, env, session?.userId ?? null, imageMatch[1]);
+
+  if (!session) return error("로그인이 필요합니다.", 401);
   if (path === "/api/me" && request.method === "GET") {
     const user = await env.DB.prepare("SELECT id, email, name, avatar_url FROM users WHERE id = ?").bind(session.userId).first();
     return user ? json({ user }) : error("사용자를 찾을 수 없습니다.", 401);
-  }
-  if (path === "/api/entries" && request.method === "GET") {
-    const entries = await env.DB.prepare("SELECT * FROM entries WHERE user_id = ? ORDER BY entry_date DESC, created_at DESC, id DESC").bind(session.userId).all<Entry>();
-    return json({ entries: entries.results });
   }
   if (path === "/api/entries" && request.method === "POST") return createEntry(request, env, session.userId);
   const entryMatch = path.match(/^\/api\/entries\/([\w-]+)$/);
@@ -59,12 +60,16 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
     if (request.method === "DELETE") return deleteEntry(env, session.userId, entryMatch[1], ctx);
   }
   if (path === "/api/images" && request.method === "POST") return uploadImage(request, env, session.userId);
-  const imageMatch = path.match(/^\/api\/images\/([\w-]+)$/);
-  if (imageMatch) {
-    if (request.method === "GET") return getImage(request, env, session.userId, imageMatch[1]);
-    if (request.method === "DELETE") return deleteImage(env, session.userId, imageMatch[1]);
-  }
+  if (imageMatch && request.method === "DELETE") return deleteImage(env, session.userId, imageMatch[1]);
   return error("찾을 수 없는 API입니다.", 404);
+}
+
+// Every entry, newest first, for anyone. user_id stays on the server; a signed-in
+// visitor only learns which entries are theirs, so the page can offer edit and delete.
+async function listEntries(env: Env, userId: string | null): Promise<Response> {
+  const rows = await env.DB.prepare("SELECT id, entry_date, title, body, created_at, updated_at, user_id = ? AS mine FROM entries ORDER BY entry_date DESC, created_at DESC, id DESC")
+    .bind(userId).all<Entry & { mine: number | null }>();
+  return json({ entries: rows.results.map((entry) => ({ ...entry, mine: entry.mine === 1 })) });
 }
 
 function validEntry(input: unknown): input is { entryDate: string; title: string; body: string } {
@@ -121,12 +126,15 @@ async function uploadImage(request: Request, env: Env, userId: string): Promise<
     .bind(imageId, userId, entry, key, file.type, file.size).run();
   return json({ image: { id: imageId, url: `/api/images/${imageId}` } }, 201);
 }
-async function getImage(request: Request, env: Env, userId: string, imageId: string): Promise<Response> {
-  const image = await env.DB.prepare("SELECT object_key, content_type FROM images WHERE id = ? AND user_id = ?").bind(imageId, userId).first<{ object_key: string; content_type: string }>();
+// A photo attached to an entry is public like the entry. One uploaded while composing and
+// not yet saved with an entry is still visible only to the person who uploaded it.
+async function getImage(request: Request, env: Env, userId: string | null, imageId: string): Promise<Response> {
+  const image = await env.DB.prepare("SELECT object_key, content_type, entry_id FROM images WHERE id = ? AND (entry_id IS NOT NULL OR user_id = ?)")
+    .bind(imageId, userId).first<{ object_key: string; content_type: string; entry_id: string | null }>();
   if (!image) return error("이미지를 찾을 수 없습니다.", 404);
   const object = await env.IMAGES.get(image.object_key);
   if (!object) return error("이미지를 찾을 수 없습니다.", 404);
-  const headers = new Headers({ "Content-Type": object.httpMetadata?.contentType || image.content_type, "Cache-Control": "private, max-age=3600", ETag: object.httpEtag });
+  const headers = new Headers({ "Content-Type": object.httpMetadata?.contentType || image.content_type, "Cache-Control": `${image.entry_id ? "public" : "private"}, max-age=3600`, ETag: object.httpEtag });
   if (request.headers.get("If-None-Match") === object.httpEtag) return new Response(null, { status: 304, headers });
   return new Response(object.body, { headers });
 }

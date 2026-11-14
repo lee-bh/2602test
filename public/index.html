@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>오늘의 기록</title>
-  <meta name="description" content="Cloudflare Workers, D1, R2로 만든 비공개 일기장입니다.">
+  <meta name="description" content="누구나 읽을 수 있는 기록 피드입니다.">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -12,6 +12,7 @@
     <h1>오늘의 기록</h1>
     <button id="signInButton" hidden>구글로그인</button>
     <button id="signOutButton" hidden>로그아웃</button>
+    <p id="pageNotice" class="notice" aria-live="polite" hidden></p>
   </header>
   <main id="entryContainer"></main>
   <section id="writeForm" hidden>
