@@ -64,11 +64,13 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
   return error("찾을 수 없는 API입니다.", 404);
 }
 
-// Every entry, newest first, for anyone. user_id stays on the server; a signed-in
-// visitor only learns which entries are theirs, so the page can offer edit and delete.
+// Every entry, newest first, for anyone, with the author's display name. user_id and
+// email stay on the server; a signed-in visitor only learns which entries are theirs,
+// so the page can offer edit and delete.
 async function listEntries(env: Env, userId: string | null): Promise<Response> {
-  const rows = await env.DB.prepare("SELECT id, entry_date, title, body, created_at, updated_at, user_id = ? AS mine FROM entries ORDER BY entry_date DESC, created_at DESC, id DESC")
-    .bind(userId).all<Entry & { mine: number | null }>();
+  const rows = await env.DB.prepare(`SELECT e.id, e.entry_date, e.title, e.body, e.created_at, e.updated_at, u.name AS author, e.user_id = ? AS mine
+    FROM entries e JOIN users u ON u.id = e.user_id ORDER BY e.entry_date DESC, e.created_at DESC, e.id DESC`)
+    .bind(userId).all<Entry & { author: string; mine: number | null }>();
   return json({ entries: rows.results.map((entry) => ({ ...entry, mine: entry.mine === 1 })) });
 }
 
