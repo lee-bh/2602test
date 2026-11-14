@@ -23,6 +23,10 @@ footer{padding-bottom: 50vh;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
+/* A photo with a copyright line: the line sits under its right edge, in small type. */
+figure.entry-image{margin: 0;}
+figure.entry-image img{display:block; max-width: 100%;}
+figure.entry-image figcaption{font-size: 0.75rem; text-align: right; padding-top: 0.25rem;}
 .notice{padding: 2rem 0;}
 button, input, textarea{color:black; line-height: 1.7; font-size: 1rem; font-family: 'Gowun Batang', serif;
 word-break: keep-all; border:none; background:var(--color-point); outline:none;}
@@ -42,6 +46,8 @@ background:var(--color-point);}
 .photo-chip{display:flex; align-items:center; gap:0.3rem; flex:none;}
 .photo-chip img{width:2.4rem; height:2.4rem; object-fit:cover; display:block;}
 .photo-chip button{font-size:0.8rem; margin:0;}
+/* Shares the panel colour, so an underline marks where to type. */
+.photo-credit{width:9rem; font-size:0.8rem; background:transparent; border-bottom:1px solid currentColor; padding:0 0.2rem;}
 #formBottom{display:flex; align-items:center; padding:0 1rem 1rem;}
 #formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
 #saveButton{margin-right: 0;}
@@ -52,7 +58,7 @@ background:var(--color-point);}
     html{font-size: 17px; color:white;}
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm {left: 0px; width: 100vw;}
-    #entryDate, #entryTitle, #entryText{color:#eee;}
+    #entryDate, #entryTitle, #entryText, .photo-credit{color:#eee;}
     #entryDate{color-scheme: dark;}
     #entryText{height: 10rem;}
     button{color:#eee;}

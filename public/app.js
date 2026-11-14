@@ -10,7 +10,9 @@ const api = async (path, options = {}) => {
 };
 // Uploads live in the body as ![name](/api/images/<id>); the list shows them as pictures
 // and keeps the markdown itself out of the text.
-const IMAGE_MARKDOWN = /!\[([^\]]*)\]\((\/api\/images\/[\w-]+)\)/g;
+// An optional "title" after the address is the photo's copyright line:
+// ![name](/api/images/<id> "© someone").
+const IMAGE_MARKDOWN = /!\[([^\]]*)\]\((\/api\/images\/[\w-]+)(?:\s+"([^"\n]*)")?\)/g;
 const today = () => new Date().toISOString().slice(0, 10);
 
 const entryContainer = $('entryContainer');
@@ -36,11 +38,22 @@ function appendBody(section, body) {
   for (const match of body.matchAll(IMAGE_MARKDOWN)) {
     appendText(section, body.slice(cursor, match.index));
     const image = document.createElement('img');
-    image.classList.add('entry-image');
     image.src = match[2];
     image.alt = match[1];
     image.loading = 'lazy';
-    section.appendChild(image);
+    const credit = match[3]?.trim();
+    if (credit) {
+      const figure = document.createElement('figure');
+      figure.classList.add('entry-image');
+      figure.appendChild(image);
+      const caption = document.createElement('figcaption');
+      caption.textContent = credit;
+      figure.appendChild(caption);
+      section.appendChild(figure);
+    } else {
+      image.classList.add('entry-image');
+      section.appendChild(image);
+    }
     cursor = match.index + match[0].length;
   }
   appendText(section, body.slice(cursor));
@@ -231,22 +244,36 @@ function clearPhotoStrip() {
   photoStrip.hidden = true;
 }
 
-function addPhotoChip(file, markdown) {
-  const url = URL.createObjectURL(file);
-  photoUrls.push(url);
+function addPhotoChip(file, name, url) {
+  const preview = URL.createObjectURL(file);
+  photoUrls.push(preview);
   const chip = document.createElement('div');
   chip.classList.add('photo-chip');
   const thumb = document.createElement('img');
-  thumb.src = url;
+  thumb.src = preview;
   thumb.alt = file.name;
   chip.appendChild(thumb);
+  // Typed next to the photo and written into the markdown when it is placed.
+  const credit = document.createElement('input');
+  credit.type = 'text';
+  credit.classList.add('photo-credit');
+  credit.placeholder = '저작권 (선택)';
+  credit.setAttribute('aria-label', '사진 저작권 표시');
+  chip.appendChild(credit);
   const insert = document.createElement('button');
   insert.type = 'button';
   insert.textContent = '넣기';
-  insert.addEventListener('click', () => insertAtCursor(markdown));
+  insert.addEventListener('click', () => insertAtCursor(imageMarkdown(name, url, credit.value)));
   chip.appendChild(insert);
   photoStrip.appendChild(chip);
   photoStrip.hidden = false;
+}
+
+// ] would end the name and " the credit early, so they are swapped for look-alikes.
+function imageMarkdown(name, url, credit) {
+  const alt = name.replace(/[\[\]\n]/g, ' ');
+  const line = credit.replace(/\s+/g, ' ').replace(/"([^"]*)"/g, '\u201C$1\u201D').replaceAll('"', '\u201D').trim();
+  return line ? `![${alt}](${url} "${line}")` : `![${alt}](${url})`;
 }
 
 // Drop the text where the caret was left, not at the end.
@@ -278,8 +305,8 @@ photoInput.addEventListener('change', async (event) => {
     // While composing there is no entry yet; the server links the photo when it is saved.
     if (editingId) data.append('entryId', editingId);
     const result = await api('/api/images', { method: 'POST', body: data });
-    addPhotoChip(file, `![${picked.name}](${result.image.url})`);
-    formMessage.textContent = '넣기를 누르면 커서 위치에 들어갑니다.';
+    addPhotoChip(file, picked.name, result.image.url);
+    formMessage.textContent = '저작권을 적고 넣기를 누르면 커서 위치에 들어갑니다.';
   } catch (error) {
     formMessage.textContent = error.message;
   } finally {
