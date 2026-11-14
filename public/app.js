@@ -74,19 +74,25 @@ function renderEntries() {
 
     appendBody(section, entry.body);
 
-    const remove = document.createElement('button');
-    remove.classList.add('delete-button');
-    remove.textContent = '지우기';
-    section.appendChild(remove);
-
-    const edit = document.createElement('button');
-    edit.classList.add('edit-button');
-    edit.textContent = '수정하기';
-    section.appendChild(edit);
+    // The feed is public; only the author gets the controls.
+    if (entry.mine) appendControls(section);
 
     entryContainer.appendChild(section);
   }
+  if (!entries.length) showNotice('아직 올라온 기록이 없습니다.');
   markEditingEntry();
+}
+
+function appendControls(section) {
+  const remove = document.createElement('button');
+  remove.classList.add('delete-button');
+  remove.textContent = '지우기';
+  section.appendChild(remove);
+
+  const edit = document.createElement('button');
+  edit.classList.add('edit-button');
+  edit.textContent = '수정하기';
+  section.appendChild(edit);
 }
 
 function markEditingEntry() {
@@ -271,24 +277,33 @@ function showNotice(text) {
   entryContainer.replaceChildren(notice);
 }
 
+// Sits above the feed, so a sign-in problem does not hide the entries.
+const pageNotice = $('pageNotice');
+function showPageNotice(text) {
+  pageNotice.textContent = text;
+  pageNotice.hidden = !text;
+}
+
 async function loadEntries() {
   entries = (await api('/api/entries')).entries;
   renderEntries();
 }
 
 async function start() {
+  const loginError = new URLSearchParams(location.search).get('login_error');
+  if (location.search) history.replaceState(null, '', location.pathname);
+  let signedIn = true;
   try {
     await api('/api/me');
   } catch (error) {
-    $('signInButton').hidden = false;
-    const reason = error.status === 401 ? null : error.message;
-    showNotice(reason || new URLSearchParams(location.search).get('login_error') || '나만 볼 수 있는 일기장입니다. 구글로그인을 눌러 시작하세요.');
-    if (location.search) history.replaceState(null, '', location.pathname);
-    return;
+    signedIn = false;
+    // 401 just means a visitor; anything else is worth showing.
+    showPageNotice(loginError || (error.status === 401 ? '' : error.message));
   }
-  $('signOutButton').hidden = false;
-  writeForm.hidden = false;
-  exitEditMode();
+  $('signInButton').hidden = signedIn;
+  $('signOutButton').hidden = !signedIn;
+  writeForm.hidden = !signedIn;
+  if (signedIn) exitEditMode();
   try {
     await loadEntries();
   } catch (error) {
