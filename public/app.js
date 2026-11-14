@@ -79,15 +79,15 @@ function renderEntries() {
     // textContent so < and > typed into an entry are not read as tags
     title.textContent = entry.title || '(제목 없음)';
     summary.appendChild(title);
-    const date = document.createElement('p');
-    date.classList.add('entry-date');
-    date.textContent = entry.entry_date.replaceAll('-', '. ');
-    summary.appendChild(date);
+    // Shown under the title while folded and after the body once opened; CSS hides
+    // whichever copy does not apply.
+    summary.appendChild(entryMeta(entry));
     details.appendChild(summary);
 
     const content = document.createElement('div');
     content.classList.add('entry-content');
     appendBody(content, entry.body);
+    content.appendChild(entryMeta(entry));
     // The feed is public; only the author gets the controls.
     if (entry.mine) appendControls(content);
     details.appendChild(content);
@@ -97,6 +97,13 @@ function renderEntries() {
   }
   if (!entries.length) showNotice('아직 올라온 기록이 없습니다.');
   markEditingEntry();
+}
+
+function entryMeta(entry) {
+  const meta = document.createElement('p');
+  meta.classList.add('entry-meta');
+  meta.textContent = [entry.entry_date.replaceAll('-', '. '), entry.author].filter(Boolean).join(' · ');
+  return meta;
 }
 
 function appendControls(section) {

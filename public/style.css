@@ -18,6 +18,8 @@ footer{padding-bottom: 50vh;}
 .entry summary{list-style: none; cursor: pointer;}
 .entry summary::-webkit-details-marker{display: none;}
 .entry summary:focus-visible{outline: 1px dashed currentColor; outline-offset: 0.25rem;}
+/* Date and author sit under the title in the list and move after the body when opened. */
+.entry details[open] summary .entry-meta{display: none;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}

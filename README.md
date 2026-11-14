@@ -47,7 +47,7 @@ npm run deploy
 
 - `GET /auth/google` and `GET /auth/google/callback`: Google OAuth PKCE sign-in flow.
 - `POST /auth/logout`: signed-session logout.
-- `GET /api/entries`: public feed of every entry; no sign-in needed. Signed-in visitors also get `mine` on their own entries.
+- `GET /api/entries`: public feed of every entry with its author's Google display name (never the email); no sign-in needed. Signed-in visitors also get `mine` on their own entries.
 - `POST /api/entries`, `PUT|DELETE /api/entries/:id`: authenticated; only the author can change an entry.
 - `GET /api/images/:id`: public for photos attached to an entry; a photo not yet saved with an entry is shown only to its uploader.
 - `POST /api/images`, `DELETE /api/images/:id`: authenticated R2 upload and delete.
