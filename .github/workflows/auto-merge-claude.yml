@@ -1,0 +1,35 @@
+# Every push to a claude/* branch is merged straight into main, so changes made in a
+# Claude Code session go live without opening and merging a pull request by hand.
+# Cloudflare deploys from main, so a merge here is also a deploy.
+name: Merge Claude branches into main
+
+on:
+  push:
+    branches: ["claude/**"]
+
+permissions:
+  contents: write
+
+# Two sessions pushing at once must not race each other onto main.
+concurrency:
+  group: merge-into-main
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Merge the pushed branch into main
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "refs/heads/$BRANCH"
+          # Stops here on a conflict and leaves main untouched; the run shows as failed.
+          git merge --no-ff FETCH_HEAD -m "Merge branch '$BRANCH' into main"
+          git push origin main
