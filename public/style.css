@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang&display=swap');
 :root{--color-point: #ddd;}
-html{font-family: 'Gowun Batang', serif; line-height: 1.7; font-size: 18px; word-break: keep-all;
+html{font-family: 'Gowun Batang', serif; line-height: 1.7; font-size: 20px; word-break: keep-all;
 box-sizing: border-box;}
 /* box-sizing is not inherited by default, so without this the inputs
    render wider than the form and push a horizontal scrollbar on narrow screens. */
 *, *::before, *::after{box-sizing: inherit;}
 body, h1, h2, ul, ol, p{font-weight:normal; margin: 0; padding: 0;}
-header, main, footer, #writeForm{width: 550px; margin: 0 auto;}
+header, main, footer, #writeForm{width: 600px; margin: 0 auto;}
 header{padding:4rem 0 2rem;}
 footer{padding-bottom: 50vh;}
 #entryContainer{padding:2rem 0rem;}
@@ -46,7 +46,7 @@ button:hover{background:black; color:white;}
 button{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
 
 /* The form carries the panel colour so the inputs and the bottom row read as one block. */
-#writeForm { position: fixed; left: calc(50% - 275px - 1rem); bottom: 0; width: calc(550px + 2rem);
+#writeForm { position: fixed; left: calc(50% - 300px - 1rem); bottom: 0; width: calc(600px + 2rem);
 background:var(--color-point);}
 #entryTitle, #entryText {border:none; background:transparent; width: 100%; padding:1rem;}
 #entryTitle{padding-bottom:0;}
@@ -64,7 +64,8 @@ background:var(--color-point);}
 #formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
 #saveButton{margin-right: 0;}
 
-@media (max-width: 550px) {
+/* Below the 600px column plus the write form's 1rem sides (2 x 20px). */
+@media (max-width: 640px) {
     :root{--color-point: #222;}
     body{background:black;}
     html{font-size: 17px; color:white;}
