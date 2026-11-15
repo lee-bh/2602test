@@ -347,7 +347,8 @@ async function start() {
   try {
     const { user } = await api('/api/me');
     // A new account picks its nickname before anything else.
-    if (!user.nickname) { location.replace('/me?setup=1'); return; }
+    // null: nicknames are on and this account has none. Absent: not switched on yet.
+    if (user.nickname === null) { location.replace('/me?setup=1'); return; }
   } catch (error) {
     signedIn = false;
     // 401 just means a visitor; anything else is worth showing.

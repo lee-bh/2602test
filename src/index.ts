@@ -50,7 +50,10 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
 
   if (!session) return error("로그인이 필요합니다.", 401);
   if (path === "/api/me" && request.method === "GET") {
-    const user = await env.DB.prepare("SELECT id, email, name, avatar_url, nickname FROM users WHERE id = ?").bind(session.userId).first();
+    // nickname is null for an account that has not picked one, and absent while the
+    // database predates nicknames, so the page only asks for one once it can be saved.
+    const columns = await nicknamesReady(env) ? "id, email, name, avatar_url, nickname" : "id, email, name, avatar_url";
+    const user = await env.DB.prepare(`SELECT ${columns} FROM users WHERE id = ?`).bind(session.userId).first();
     return user ? json({ user }) : error("사용자를 찾을 수 없습니다.", 401);
   }
   if (path === "/api/me" && request.method === "PUT") return setNickname(request, env, session.userId);
@@ -69,10 +72,21 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
 // name, email and user_id stay on the server; a signed-in visitor only learns which
 // entries are theirs, so the page can offer edit and delete.
 async function listEntries(env: Env, userId: string | null): Promise<Response> {
-  const rows = await env.DB.prepare(`SELECT e.id, e.entry_date, e.title, e.body, e.created_at, e.updated_at, u.nickname AS author, e.user_id = ? AS mine
+  const author = await nicknamesReady(env) ? "u.nickname" : "u.name";
+  const rows = await env.DB.prepare(`SELECT e.id, e.entry_date, e.title, e.body, e.created_at, e.updated_at, ${author} AS author, e.user_id = ? AS mine
     FROM entries e JOIN users u ON u.id = e.user_id ORDER BY e.entry_date DESC, e.created_at DESC, e.id DESC`)
     .bind(userId).all<Entry & { author: string | null; mine: number | null }>();
   return json({ entries: rows.results.map((entry) => ({ ...entry, mine: entry.mine === 1 })) });
+}
+
+// The code can go out before migration 0003 reaches the database. Until the column
+// exists, the feed keeps signing entries with the Google name and nothing asks for a
+// nickname; once it does, nicknames switch on without another deploy. Only "ready" is
+// remembered, so the check repeats until the migration lands.
+let nicknameColumn = false;
+async function nicknamesReady(env: Env): Promise<boolean> {
+  if (!nicknameColumn) nicknameColumn = Boolean(await env.DB.prepare("SELECT 1 FROM pragma_table_info('users') WHERE name = 'nickname'").first());
+  return nicknameColumn;
 }
 
 // 2 to 20 letters (any script), digits, spaces, _ . -; runs of spaces collapse to one.
@@ -84,6 +98,7 @@ function cleanNickname(value: unknown): string | null {
   return NICKNAME.test(nickname) ? nickname : null;
 }
 async function setNickname(request: Request, env: Env, userId: string): Promise<Response> {
+  if (!(await nicknamesReady(env))) return error("닉네임 기능을 준비하고 있습니다. 잠시 뒤에 다시 시도해 주세요.", 503);
   const input = await request.json().catch(() => null) as { nickname?: unknown } | null;
   const nickname = cleanNickname(input?.nickname);
   if (!nickname) return error(NICKNAME_RULE);
@@ -111,7 +126,7 @@ function validEntry(input: unknown): input is { entryDate: string; title: string
 async function createEntry(request: Request, env: Env, userId: string): Promise<Response> {
   const input: unknown = await request.json().catch(() => null);
   if (!validEntry(input)) return error("일기 형식이 올바르지 않습니다.");
-  if (!(await hasNickname(env, userId))) return error("마이페이지에서 닉네임을 먼저 정해 주세요.", 403);
+  if (await nicknamesReady(env) && !(await hasNickname(env, userId))) return error("마이페이지에서 닉네임을 먼저 정해 주세요.", 403);
   const entryId = id();
   try {
     await env.DB.prepare("INSERT INTO entries (id, user_id, entry_date, title, body) VALUES (?, ?, ?, ?, ?)")

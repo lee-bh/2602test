@@ -46,11 +46,16 @@ async function start() {
     location.replace('/');
     return;
   }
+  if (!('nickname' in user)) {
+    // The database has not been given nicknames yet; nothing here can be saved.
+    input.disabled = saveButton.disabled = true;
+    message.textContent = '닉네임 기능을 준비하고 있습니다.';
+  }
   input.value = user.nickname || '';
   $('accountEmail').textContent = user.email;
-  $('setupNotice').hidden = Boolean(user.nickname);
+  $('setupNotice').hidden = user.nickname !== null;
   // Until a nickname exists there is nothing to go back to.
-  $('homeButton').hidden = !user.nickname;
+  $('homeButton').hidden = user.nickname === null;
   $('myPage').hidden = false;
   input.focus();
 }
