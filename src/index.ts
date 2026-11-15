@@ -50,9 +50,10 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
 
   if (!session) return error("로그인이 필요합니다.", 401);
   if (path === "/api/me" && request.method === "GET") {
-    const user = await env.DB.prepare("SELECT id, email, name, avatar_url FROM users WHERE id = ?").bind(session.userId).first();
+    const user = await env.DB.prepare("SELECT id, email, name, avatar_url, nickname FROM users WHERE id = ?").bind(session.userId).first();
     return user ? json({ user }) : error("사용자를 찾을 수 없습니다.", 401);
   }
+  if (path === "/api/me" && request.method === "PUT") return setNickname(request, env, session.userId);
   if (path === "/api/entries" && request.method === "POST") return createEntry(request, env, session.userId);
   const entryMatch = path.match(/^\/api\/entries\/([\w-]+)$/);
   if (entryMatch) {
@@ -64,15 +65,41 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
   return error("찾을 수 없는 API입니다.", 404);
 }
 
-// Every entry, newest first, for anyone, with the author's display name. user_id and
-// email stay on the server; a signed-in visitor only learns which entries are theirs,
-// so the page can offer edit and delete.
+// Every entry, newest first, for anyone, signed with the author's nickname. The Google
+// name, email and user_id stay on the server; a signed-in visitor only learns which
+// entries are theirs, so the page can offer edit and delete.
 async function listEntries(env: Env, userId: string | null): Promise<Response> {
-  const rows = await env.DB.prepare(`SELECT e.id, e.entry_date, e.title, e.body, e.created_at, e.updated_at, u.name AS author, e.user_id = ? AS mine
+  const rows = await env.DB.prepare(`SELECT e.id, e.entry_date, e.title, e.body, e.created_at, e.updated_at, u.nickname AS author, e.user_id = ? AS mine
     FROM entries e JOIN users u ON u.id = e.user_id ORDER BY e.entry_date DESC, e.created_at DESC, e.id DESC`)
-    .bind(userId).all<Entry & { author: string; mine: number | null }>();
+    .bind(userId).all<Entry & { author: string | null; mine: number | null }>();
   return json({ entries: rows.results.map((entry) => ({ ...entry, mine: entry.mine === 1 })) });
 }
+
+// 2 to 20 letters (any script), digits, spaces, _ . -; runs of spaces collapse to one.
+const NICKNAME = /^[\p{L}\p{N}_.\- ]{2,20}$/u;
+const NICKNAME_RULE = "닉네임은 2~20자의 한글, 영문, 숫자, 공백, _ . - 만 쓸 수 있습니다.";
+function cleanNickname(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const nickname = value.normalize("NFC").trim().replace(/\s+/g, " ");
+  return NICKNAME.test(nickname) ? nickname : null;
+}
+async function setNickname(request: Request, env: Env, userId: string): Promise<Response> {
+  const input = await request.json().catch(() => null) as { nickname?: unknown } | null;
+  const nickname = cleanNickname(input?.nickname);
+  if (!nickname) return error(NICKNAME_RULE);
+  const taken = await env.DB.prepare("SELECT id FROM users WHERE nickname = ? COLLATE NOCASE AND id <> ?").bind(nickname, userId).first();
+  if (taken) return error("이미 사용 중인 닉네임입니다.", 409);
+  try {
+    await env.DB.prepare("UPDATE users SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(nickname, userId).run();
+  } catch (cause) {
+    // Someone took it between the check and the write; the unique index caught it.
+    if (String(cause).includes("UNIQUE")) return error("이미 사용 중인 닉네임입니다.", 409);
+    throw cause;
+  }
+  return json({ nickname });
+}
+const hasNickname = async (env: Env, userId: string) =>
+  Boolean(await env.DB.prepare("SELECT id FROM users WHERE id = ? AND nickname IS NOT NULL").bind(userId).first());
 
 function validEntry(input: unknown): input is { entryDate: string; title: string; body: string } {
   if (!input || typeof input !== "object") return false;
@@ -84,6 +111,7 @@ function validEntry(input: unknown): input is { entryDate: string; title: string
 async function createEntry(request: Request, env: Env, userId: string): Promise<Response> {
   const input: unknown = await request.json().catch(() => null);
   if (!validEntry(input)) return error("일기 형식이 올바르지 않습니다.");
+  if (!(await hasNickname(env, userId))) return error("마이페이지에서 닉네임을 먼저 정해 주세요.", 403);
   const entryId = id();
   try {
     await env.DB.prepare("INSERT INTO entries (id, user_id, entry_date, title, body) VALUES (?, ?, ?, ?, ?)")

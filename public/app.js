@@ -315,6 +315,7 @@ photoInput.addEventListener('change', async (event) => {
 });
 
 $('signInButton').addEventListener('click', () => { location.href = '/auth/google'; });
+$('myPageButton').addEventListener('click', () => { location.href = '/me'; });
 $('signOutButton').addEventListener('click', async () => {
   await api('/auth/logout', { method: 'POST' }).catch(() => {});
   location.reload();
@@ -344,7 +345,9 @@ async function start() {
   if (location.search) history.replaceState(null, '', location.pathname);
   let signedIn = true;
   try {
-    await api('/api/me');
+    const { user } = await api('/api/me');
+    // A new account picks its nickname before anything else.
+    if (!user.nickname) { location.replace('/me?setup=1'); return; }
   } catch (error) {
     signedIn = false;
     // 401 just means a visitor; anything else is worth showing.
@@ -352,6 +355,7 @@ async function start() {
   }
   $('signInButton').hidden = signedIn;
   $('signOutButton').hidden = !signedIn;
+  $('myPageButton').hidden = !signedIn;
   writeForm.hidden = !signedIn;
   if (signedIn) exitEditMode();
   try {

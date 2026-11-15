@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>마이페이지 - 오늘의 기록</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1><a href="/">오늘의 기록</a></h1>
+  </header>
+  <main id="myPage" hidden>
+    <h2>마이페이지</h2>
+    <p id="setupNotice" hidden>처음 오셨네요. 글에 표시될 닉네임을 정해 주세요.</p>
+    <form id="nicknameForm">
+      <label for="nicknameInput">닉네임</label>
+      <div class="me-row">
+        <input type="text" id="nicknameInput" maxlength="20" autocomplete="nickname" required>
+        <button id="nicknameSave">저장하기</button>
+      </div>
+      <p id="nicknameMessage" class="me-hint" aria-live="polite">2~20자의 한글, 영문, 숫자, 공백, _ . - 를 쓸 수 있습니다.</p>
+    </form>
+    <p class="me-label">로그인한 구글 계정</p>
+    <p id="accountEmail" class="me-hint"></p>
+    <p class="me-actions">
+      <button type="button" id="homeButton">기록으로</button>
+      <button type="button" id="signOutButton">로그아웃</button>
+    </p>
+  </main>
+  <footer>
+    <p>오늘의 기록&copy;2026.</p>
+  </footer>
+  <script type="module" src="/me.js"></script>
+</body>
+</html>
