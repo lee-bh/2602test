@@ -22,6 +22,7 @@ const titleInput = $('entryTitle');
 const textInput = $('entryText');
 const saveButton = $('saveButton');
 const cancelButton = $('cancelButton');
+const writeToggle = $('writeToggle');
 const photoButton = $('photoButton');
 const photoInput = $('photoInput');
 const photoStrip = $('photoStrip');
@@ -137,10 +138,24 @@ function markEditingEntry() {
   });
 }
 
+// The panel stays folded into the 글쓰기 bar until it is needed. Folding it keeps a
+// new entry's draft for the next 글쓰기; 취소 on an edit drops the changes.
+function openPanel() {
+  writeForm.hidden = false;
+  writeToggle.hidden = true;
+  (titleInput.value ? textInput : titleInput).focus();
+}
+
+function closePanel() {
+  if (editingId) exitEditMode();
+  writeForm.hidden = true;
+  writeToggle.hidden = false;
+  writeToggle.focus();
+}
+
 function enterEditMode(entryId) {
   editingId = entryId;
   saveButton.textContent = '수정하기';
-  cancelButton.hidden = false;
   markEditingEntry();
 }
 
@@ -150,7 +165,6 @@ function exitEditMode() {
   titleInput.value = '';
   textInput.value = '';
   saveButton.textContent = '저장하기';
-  cancelButton.hidden = true;
   formMessage.textContent = '';
   clearPhotoStrip();
   markEditingEntry();
@@ -168,7 +182,11 @@ entryContainer.addEventListener('click', (event) => {
 });
 
 saveButton.addEventListener('click', onSave);
-cancelButton.addEventListener('click', exitEditMode);
+cancelButton.addEventListener('click', closePanel);
+writeToggle.addEventListener('click', openPanel);
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !writeForm.hidden) closePanel();
+});
 
 function editEntry(entryId) {
   const entry = entries.find((item) => item.id === entryId);
@@ -178,6 +196,7 @@ function editEntry(entryId) {
   // the raw body, image markdown included, so saving does not drop the photos
   textInput.value = entry.body;
   enterEditMode(entryId);
+  openPanel();
   titleInput.focus();
 }
 
@@ -192,6 +211,7 @@ async function onSave() {
     if (editingId) await api(`/api/entries/${editingId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     else await api('/api/entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     exitEditMode();
+    closePanel();
     await loadEntries();
   } catch (error) {
     formMessage.textContent = error.message;
@@ -208,7 +228,7 @@ async function deleteEntry(entryId) {
     formMessage.textContent = error.message;
     return;
   }
-  if (editingId === entryId) exitEditMode();
+  if (editingId === entryId) closePanel();
   await loadEntries();
 }
 
@@ -357,7 +377,8 @@ async function start() {
   $('signInButton').hidden = signedIn;
   $('signOutButton').hidden = !signedIn;
   $('myPageButton').hidden = !signedIn;
-  writeForm.hidden = !signedIn;
+  writeForm.hidden = true;
+  writeToggle.hidden = !signedIn;
   if (signedIn) exitEditMode();
   try {
     await loadEntries();

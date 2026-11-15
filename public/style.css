@@ -45,12 +45,17 @@ word-break: keep-all; border:none; background:var(--color-point); outline:none;}
 button:hover{background:black; color:white;}
 button{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
 
-/* The form carries the panel colour so the inputs and the bottom row read as one block. */
-#writeForm { position: fixed; left: calc(50% - 300px - 1rem); bottom: 0; width: calc(600px + 2rem);
+/* The form carries the panel colour so the inputs and the bottom row read as one block.
+   Folded, it is the 글쓰기 bar along the bottom; opened, it rises to 80vh and the text
+   box takes whatever height the other rows leave. */
+#writeForm, #writeToggle { position: fixed; left: calc(50% - 300px - 1rem); bottom: 0; width: calc(600px + 2rem);
 background:var(--color-point);}
+#writeForm{display:flex; flex-direction:column; height:80vh;}
+#writeForm[hidden], #writeToggle[hidden]{display:none;}
+#writeToggle{margin:0; padding:0.75rem 1rem; text-align:left;}
 #entryTitle, #entryText {border:none; background:transparent; width: 100%; padding:1rem;}
 #entryTitle{padding-bottom:0;}
-#entryText{height:12rem; word-spacing: -0.1rem; padding-top:0; padding-bottom:0.5rem;}
+#entryText{flex:1; min-height:0; resize:none; word-spacing: -0.1rem; padding-top:0; padding-bottom:0.5rem;}
 #entryDate{width:auto; font-size: 0.9rem; color-scheme: light; background:transparent;}
 /* Uploaded, not yet placed in the text. */
 #photoStrip{display:flex; gap:0.75rem; align-items:center; padding:0 1rem 0.5rem; overflow-x:auto;}
@@ -60,9 +65,10 @@ background:var(--color-point);}
 .photo-chip button{font-size:0.8rem; margin:0;}
 /* Shares the panel colour, so an underline marks where to type. */
 .photo-credit{width:9rem; font-size:0.8rem; background:transparent; border-bottom:1px solid currentColor; padding:0 0.2rem;}
+#photoStrip, #formBottom{flex:none;}
 #formBottom{display:flex; align-items:center; padding:0 1rem 1rem;}
 #formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
-#saveButton{margin-right: 0;}
+#cancelButton{margin-right: 0;}
 
 /* Below the 600px column plus the write form's 1rem sides (2 x 20px). */
 @media (max-width: 640px) {
@@ -70,10 +76,9 @@ background:var(--color-point);}
     body{background:black;}
     html{font-size: 17px; color:white;}
     header, main, footer{width: calc(100% - 2rem);}
-    #writeForm {left: 0px; width: 100vw;}
+    #writeForm, #writeToggle {left: 0px; width: 100vw;}
     #entryDate, #entryTitle, #entryText, .photo-credit, #nicknameInput{color:#eee;}
     #entryDate{color-scheme: dark;}
-    #entryText{height: 10rem;}
     button{color:#eee;}
     button:hover{background:white; color:black;}
 }
