@@ -69,11 +69,11 @@ function appendText(section, text) {
   section.appendChild(paragraph);
 }
 
-// Entries the reader has opened, kept across redraws so saving or deleting one entry
-// does not fold every other entry back up.
-const openIds = new Set();
+// Every entry starts open. The ones the reader folded are remembered across redraws, so
+// saving or deleting one entry does not reopen them.
+const closedIds = new Set();
 
-// The feed is a list of titles; a title opens its entry in place.
+// Each title folds and unfolds its entry in place.
 function renderEntries() {
   entryContainer.innerHTML = '';
   for (const entry of entries) {
@@ -82,9 +82,9 @@ function renderEntries() {
     section.dataset.id = entry.id;
 
     const details = document.createElement('details');
-    details.open = openIds.has(entry.id);
+    details.open = !closedIds.has(entry.id);
     details.addEventListener('toggle', () => {
-      if (details.open) openIds.add(entry.id); else openIds.delete(entry.id);
+      if (details.open) closedIds.delete(entry.id); else closedIds.add(entry.id);
     });
 
     const summary = document.createElement('summary');
