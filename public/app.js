@@ -213,7 +213,7 @@ async function deleteEntry(entryId) {
 }
 
 // Photos are shrunk in the browser before upload: a phone picture is several thousand
-// pixels wide, far more than the 550px column ever shows.
+// pixels wide, far more than the 600px column ever shows.
 const MAX_WIDTH = 800;
 async function shrink(file) {
   // An animated GIF would come back as a single frame, so leave it alone.
