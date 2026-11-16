@@ -33,6 +33,11 @@ const formMessage = $('formMessage');
 let entries = [];
 // id of the entry being edited; null means new-entry mode
 let editingId = null;
+// Visitors read entries and comments; only a signed-in person gets buttons.
+let signedIn = false;
+// Entries whose comment box is open, and what was typed in each, so redrawing the feed
+// (after a save elsewhere) neither closes a box nor loses its text.
+const commentDrafts = new Map();
 
 // Walk the body in order so a photo lands between the paragraphs it was written between,
 // rather than every photo being collected at the end.
@@ -104,8 +109,10 @@ function renderEntries() {
     content.classList.add('entry-content');
     appendBody(content, entry.body);
     content.appendChild(entryMeta(entry));
-    // The feed is public; only the author gets the controls.
-    if (entry.mine) appendControls(content);
+    appendComments(content, entry.comments ?? []);
+    // The feed is public. Signed in, everyone may comment; only the author may edit.
+    if (signedIn) appendControls(content, entry);
+    if (commentDrafts.has(entry.id)) appendCommentForm(content, entry.id);
     details.appendChild(content);
 
     section.appendChild(details);
@@ -122,12 +129,113 @@ function entryMeta(entry) {
   return meta;
 }
 
-// Deleting is done from the edit panel, so an entry only offers 수정하기.
-function appendControls(section) {
+// [댓글달기] on every entry, then [수정하기] on one's own. Deleting an entry is done from
+// the edit panel.
+function appendControls(section, entry) {
+  const comment = document.createElement('button');
+  comment.classList.add('comment-button');
+  comment.textContent = '댓글달기';
+  section.appendChild(comment);
+  if (!entry.mine) return;
   const edit = document.createElement('button');
   edit.classList.add('edit-button');
   edit.textContent = '수정하기';
   section.appendChild(edit);
+}
+
+// Stored in UTC as "YYYY-MM-DD HH:MM:SS"; shown in the reader's own time.
+function commentTime(createdAt) {
+  const at = new Date(createdAt.replace(' ', 'T') + 'Z');
+  if (Number.isNaN(at.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${at.getFullYear()}. ${pad(at.getMonth() + 1)}. ${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+}
+
+function appendComments(section, comments) {
+  if (!comments.length) return;
+  const list = document.createElement('ul');
+  list.classList.add('comments');
+  for (const comment of comments) {
+    const item = document.createElement('li');
+    item.dataset.commentId = comment.id;
+    const body = document.createElement('p');
+    body.classList.add('comment-body');
+    body.textContent = comment.body;
+    item.appendChild(body);
+    const meta = document.createElement('p');
+    meta.classList.add('comment-meta');
+    meta.textContent = [comment.author, commentTime(comment.created_at)].filter(Boolean).join(' · ');
+    if (comment.mine) {
+      const remove = document.createElement('button');
+      remove.classList.add('comment-delete');
+      remove.textContent = '삭제';
+      meta.appendChild(remove);
+    }
+    item.appendChild(meta);
+    list.appendChild(item);
+  }
+  section.appendChild(list);
+}
+
+function appendCommentForm(section, entryId) {
+  const form = document.createElement('form');
+  form.classList.add('comment-form');
+  const box = document.createElement('textarea');
+  box.placeholder = '댓글을 남겨보세요';
+  box.maxLength = 1000;
+  box.setAttribute('aria-label', '댓글');
+  box.value = commentDrafts.get(entryId) ?? '';
+  box.addEventListener('input', () => commentDrafts.set(entryId, box.value));
+  form.appendChild(box);
+  const row = document.createElement('div');
+  row.classList.add('comment-form-row');
+  const message = document.createElement('p');
+  message.classList.add('comment-message');
+  message.setAttribute('aria-live', 'polite');
+  row.appendChild(message);
+  const submit = document.createElement('button');
+  submit.textContent = '등록';
+  row.appendChild(submit);
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.classList.add('comment-cancel');
+  cancel.textContent = '취소';
+  row.appendChild(cancel);
+  form.appendChild(row);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!box.value.trim()) { box.focus(); return; }
+    submit.disabled = true;
+    try {
+      await api(`/api/entries/${entryId}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: box.value }) });
+      commentDrafts.delete(entryId);
+      await loadEntries();
+    } catch (error) {
+      message.textContent = error.message;
+      submit.disabled = false;
+    }
+  });
+  section.appendChild(form);
+  return box;
+}
+
+function toggleCommentForm(section, entryId) {
+  const content = section.querySelector('.entry-content');
+  const open = content.querySelector('.comment-form');
+  if (open) { open.remove(); commentDrafts.delete(entryId); return; }
+  commentDrafts.set(entryId, '');
+  appendCommentForm(content, entryId).focus();
+}
+
+async function deleteComment(commentId) {
+  if (!window.confirm('이 댓글을 지울까요?')) return;
+  try {
+    await api(`/api/comments/${commentId}`, { method: 'DELETE' });
+  } catch (error) {
+    window.alert(error.message);
+    return;
+  }
+  await loadEntries();
 }
 
 function markEditingEntry() {
@@ -178,6 +286,9 @@ entryContainer.addEventListener('click', (event) => {
   const section = button.closest('.entry');
   if (!section) return;
   if (button.classList.contains('edit-button')) editEntry(section.dataset.id);
+  else if (button.classList.contains('comment-button')) toggleCommentForm(section, section.dataset.id);
+  else if (button.classList.contains('comment-cancel')) toggleCommentForm(section, section.dataset.id);
+  else if (button.classList.contains('comment-delete')) deleteComment(button.closest('li').dataset.commentId);
 });
 
 saveButton.addEventListener('click', onSave);
@@ -365,7 +476,7 @@ async function loadEntries() {
 async function start() {
   const loginError = new URLSearchParams(location.search).get('login_error');
   if (location.search) history.replaceState(null, '', location.pathname);
-  let signedIn = true;
+  signedIn = true;
   try {
     const { user } = await api('/api/me');
     // A new account picks its nickname before anything else.

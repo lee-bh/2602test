@@ -58,6 +58,10 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
   }
   if (path === "/api/me" && request.method === "PUT") return setNickname(request, env, session.userId);
   if (path === "/api/entries" && request.method === "POST") return createEntry(request, env, session.userId);
+  const commentsMatch = path.match(/^\/api\/entries\/([\w-]+)\/comments$/);
+  if (commentsMatch && request.method === "POST") return createComment(request, env, session.userId, commentsMatch[1]);
+  const commentMatch = path.match(/^\/api\/comments\/([\w-]+)$/);
+  if (commentMatch && request.method === "DELETE") return deleteComment(env, session.userId, commentMatch[1]);
   const entryMatch = path.match(/^\/api\/entries\/([\w-]+)$/);
   if (entryMatch) {
     if (request.method === "PUT") return updateEntry(request, env, session.userId, entryMatch[1]);
@@ -76,7 +80,53 @@ async function listEntries(env: Env, userId: string | null): Promise<Response> {
   const rows = await env.DB.prepare(`SELECT e.id, e.entry_date, e.title, e.body, e.created_at, e.updated_at, ${author} AS author, e.user_id = ? AS mine
     FROM entries e JOIN users u ON u.id = e.user_id ORDER BY e.entry_date DESC, e.created_at DESC, e.id DESC`)
     .bind(userId).all<Entry & { author: string | null; mine: number | null }>();
-  return json({ entries: rows.results.map((entry) => ({ ...entry, mine: entry.mine === 1 })) });
+  const comments = await listComments(env, userId, author);
+  return json({ entries: rows.results.map((entry) => ({ ...entry, mine: entry.mine === 1, comments: comments.get(entry.id) ?? [] })) });
+}
+
+// Every comment, oldest first, grouped by entry. Like entries, only the nickname leaves
+// the server, plus whether the comment is the visitor's own.
+interface Comment { id: string; entry_id: string; body: string; created_at: string; author: string | null; mine: boolean }
+async function listComments(env: Env, userId: string | null, author: string): Promise<Map<string, Comment[]>> {
+  const byEntry = new Map<string, Comment[]>();
+  let rows: (Omit<Comment, "mine"> & { mine: number | null })[];
+  try {
+    rows = (await env.DB.prepare(`SELECT c.id, c.entry_id, c.body, c.created_at, ${author} AS author, c.user_id = ? AS mine
+      FROM comments c JOIN users u ON u.id = c.user_id ORDER BY c.created_at, c.id`).bind(userId).all<Omit<Comment, "mine"> & { mine: number | null }>()).results;
+  } catch (cause) {
+    // Before migration 0004 there is no comments table; the feed still loads, just without comments.
+    if (String(cause).includes("no such table")) return byEntry;
+    throw cause;
+  }
+  for (const row of rows) {
+    const list = byEntry.get(row.entry_id) ?? [];
+    list.push({ ...row, mine: row.mine === 1 });
+    byEntry.set(row.entry_id, list);
+  }
+  return byEntry;
+}
+
+async function createComment(request: Request, env: Env, userId: string, entryId: string): Promise<Response> {
+  const input = await request.json().catch(() => null) as { body?: unknown } | null;
+  const body = typeof input?.body === "string" ? input.body.trim() : "";
+  if (!body || body.length > 1000) return error("댓글은 1~1000자로 써 주세요.");
+  if (await nicknamesReady(env) && !(await hasNickname(env, userId))) return error("닉네임을 먼저 정해 주세요.", 403);
+  if (!(await env.DB.prepare("SELECT id FROM entries WHERE id = ?").bind(entryId).first())) return error("글을 찾을 수 없습니다.", 404);
+  const commentId = id();
+  try {
+    await env.DB.prepare("INSERT INTO comments (id, entry_id, user_id, body) VALUES (?, ?, ?, ?)").bind(commentId, entryId, userId, body).run();
+  } catch (cause) {
+    if (String(cause).includes("no such table")) return error("댓글 기능을 준비하고 있습니다. 잠시 뒤에 다시 시도해 주세요.", 503);
+    throw cause;
+  }
+  return json({ comment: { id: commentId, entry_id: entryId, body } }, 201);
+}
+
+// Only the person who wrote a comment can remove it.
+async function deleteComment(env: Env, userId: string, commentId: string): Promise<Response> {
+  const result = await env.DB.prepare("DELETE FROM comments WHERE id = ? AND user_id = ?").bind(commentId, userId).run();
+  if (!result.meta.changes) return error("댓글을 찾을 수 없습니다.", 404);
+  return new Response(null, { status: 204 });
 }
 
 // The code can go out before migration 0003 reaches the database. Until the column
@@ -153,6 +203,8 @@ async function deleteEntry(env: Env, userId: string, entryId: string, ctx: Execu
   const result = await env.DB.prepare("DELETE FROM entries WHERE id = ? AND user_id = ?").bind(entryId, userId).run();
   if (!result.meta.changes) return error("일기를 찾을 수 없습니다.", 404);
   await env.DB.prepare("DELETE FROM images WHERE entry_id = ? AND user_id = ?").bind(entryId, userId).run();
+  // ON DELETE CASCADE covers this when foreign keys are enforced; this covers it when not.
+  await env.DB.prepare("DELETE FROM comments WHERE entry_id = ?").bind(entryId).run().catch(() => {});
   ctx.waitUntil(Promise.all(images.results.map((image) => env.IMAGES.delete(image.object_key))));
   return new Response(null, { status: 204 });
 }

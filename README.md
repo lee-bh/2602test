@@ -50,6 +50,7 @@ npm run deploy
 - `GET /api/entries`: public feed of every entry signed with its author's nickname (never the Google name or email); no sign-in needed. Signed-in visitors also get `mine` on their own entries.
 - `GET /api/me`, `PUT /api/me`: the signed-in account, and setting its nickname (2-20 letters, digits, spaces, `_ . -`; unique regardless of case). A new account is sent to `/me` to pick one and cannot post until it has. A nickname is set once and cannot be changed.
 - `POST /api/entries`, `PUT|DELETE /api/entries/:id`: authenticated; only the author can change an entry.
+- `POST /api/entries/:id/comments`, `DELETE /api/comments/:id`: authenticated comments (1-1000 characters), signed with the nickname; only the commenter can delete one. `GET /api/entries` returns each entry's comments, oldest first.
 - `GET /api/images/:id`: public for photos attached to an entry; a photo not yet saved with an entry is shown only to its uploader.
 - `POST /api/images`, `DELETE /api/images/:id`: authenticated R2 upload and delete.
 
