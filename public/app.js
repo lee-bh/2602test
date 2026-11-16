@@ -153,7 +153,7 @@ function closePanel() {
 
 function enterEditMode(entryId) {
   editingId = entryId;
-  saveButton.textContent = '수정하기';
+  saveButton.textContent = '수정완료';
   deleteButton.hidden = false;
   markEditingEntry();
 }
