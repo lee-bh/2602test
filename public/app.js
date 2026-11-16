@@ -23,6 +23,7 @@ const textInput = $('entryText');
 const saveButton = $('saveButton');
 const cancelButton = $('cancelButton');
 const writeToggle = $('writeToggle');
+const dock = $('dock');
 const photoButton = $('photoButton');
 const photoInput = $('photoInput');
 const photoStrip = $('photoStrip');
@@ -138,18 +139,18 @@ function markEditingEntry() {
   });
 }
 
-// The panel stays folded into the 글쓰기 bar until it is needed. Folding it keeps a
+// The panel stays folded behind the 글쓰기 button until it is needed. Folding it keeps a
 // new entry's draft for the next 글쓰기; 취소 on an edit drops the changes.
 function openPanel() {
   writeForm.hidden = false;
-  writeToggle.hidden = true;
+  dock.hidden = true;
   (titleInput.value ? textInput : titleInput).focus();
 }
 
 function closePanel() {
   if (editingId) exitEditMode();
   writeForm.hidden = true;
-  writeToggle.hidden = false;
+  dock.hidden = false;
   writeToggle.focus();
 }
 
@@ -336,10 +337,6 @@ photoInput.addEventListener('change', async (event) => {
 
 $('signInButton').addEventListener('click', () => { location.href = '/auth/google'; });
 $('myPageButton').addEventListener('click', () => { location.href = '/me'; });
-$('signOutButton').addEventListener('click', async () => {
-  await api('/auth/logout', { method: 'POST' }).catch(() => {});
-  location.reload();
-});
 
 function showNotice(text) {
   const notice = document.createElement('p');
@@ -375,7 +372,6 @@ async function start() {
     showPageNotice(loginError || (error.status === 401 ? '' : error.message));
   }
   $('signInButton').hidden = signedIn;
-  $('signOutButton').hidden = !signedIn;
   $('myPageButton').hidden = !signedIn;
   writeForm.hidden = true;
   writeToggle.hidden = !signedIn;
