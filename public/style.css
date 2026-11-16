@@ -48,7 +48,7 @@ button{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
    마이페이지 and 글쓰기 once signed in. */
 #dock{position:fixed; bottom:0.5rem; right:calc(50% - 300px - 1rem); display:flex; gap:0.5rem;}
 #dock[hidden]{display:none;}
-#dock button{margin:0;}
+#dock button{margin:0; padding: 0.1rem 1rem;}
 
 /* The form carries the panel colour so the inputs and the bottom row read as one block.
    글쓰기 raises it to 80vh, and the text box takes whatever height the other rows leave. */
