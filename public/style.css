@@ -53,6 +53,8 @@ background:var(--color-point);}
 #writeForm{display:flex; flex-direction:column; height:80vh;}
 #writeForm[hidden], #writeToggle[hidden]{display:none;}
 #writeToggle{margin:0; padding:0.75rem 1rem; text-align:left;}
+/* A visitor's way in, docked where the 글쓰기 bar ends once they are signed in. */
+#signInButton{position:fixed; bottom:0; right:calc(50% - 300px - 1rem); margin:0; padding:0.75rem 1rem;}
 #entryTitle, #entryText {border:none; background:transparent; width: 100%; padding:1rem;}
 #entryTitle{padding-bottom:0;}
 #entryText{flex:1; min-height:0; resize:none; word-spacing: -0.1rem; padding-top:0; padding-bottom:0.5rem;}
@@ -77,6 +79,7 @@ background:var(--color-point);}
     html{font-size: 17px; color:white;}
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm, #writeToggle {left: 0px; width: 100vw;}
+    #signInButton{right:0;}
     #entryDate, #entryTitle, #entryText, .photo-credit, #nicknameInput{color:#eee;}
     #entryDate{color-scheme: dark;}
     button{color:#eee;}
