@@ -22,6 +22,7 @@ const titleInput = $('entryTitle');
 const textInput = $('entryText');
 const saveButton = $('saveButton');
 const cancelButton = $('cancelButton');
+const deleteButton = $('deleteButton');
 const writeToggle = $('writeToggle');
 const dock = $('dock');
 const photoButton = $('photoButton');
@@ -121,12 +122,8 @@ function entryMeta(entry) {
   return meta;
 }
 
+// Deleting is done from the edit panel, so an entry only offers 수정하기.
 function appendControls(section) {
-  const remove = document.createElement('button');
-  remove.classList.add('delete-button');
-  remove.textContent = '지우기';
-  section.appendChild(remove);
-
   const edit = document.createElement('button');
   edit.classList.add('edit-button');
   edit.textContent = '수정하기';
@@ -157,6 +154,7 @@ function closePanel() {
 function enterEditMode(entryId) {
   editingId = entryId;
   saveButton.textContent = '수정하기';
+  deleteButton.hidden = false;
   markEditingEntry();
 }
 
@@ -166,6 +164,7 @@ function exitEditMode() {
   titleInput.value = '';
   textInput.value = '';
   saveButton.textContent = '저장하기';
+  deleteButton.hidden = true;
   formMessage.textContent = '';
   clearPhotoStrip();
   markEditingEntry();
@@ -178,12 +177,12 @@ entryContainer.addEventListener('click', (event) => {
   if (!button) return;
   const section = button.closest('.entry');
   if (!section) return;
-  if (button.classList.contains('delete-button')) deleteEntry(section.dataset.id);
-  else if (button.classList.contains('edit-button')) editEntry(section.dataset.id);
+  if (button.classList.contains('edit-button')) editEntry(section.dataset.id);
 });
 
 saveButton.addEventListener('click', onSave);
 cancelButton.addEventListener('click', closePanel);
+deleteButton.addEventListener('click', () => { if (editingId) deleteEntry(editingId); });
 writeToggle.addEventListener('click', openPanel);
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !writeForm.hidden) closePanel();
@@ -223,11 +222,14 @@ async function onSave() {
 
 async function deleteEntry(entryId) {
   if (!window.confirm('이 기록을 지울까요?')) return;
+  deleteButton.disabled = true;
   try {
     await api(`/api/entries/${entryId}`, { method: 'DELETE' });
   } catch (error) {
     formMessage.textContent = error.message;
     return;
+  } finally {
+    deleteButton.disabled = false;
   }
   if (editingId === entryId) closePanel();
   await loadEntries();
