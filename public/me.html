@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>마이페이지 - 난데없는 말들</title>
+  <title>닉네임 정하기 - 난데없는 말들</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -10,9 +10,10 @@
   <header>
     <h1><a href="/">난데없는 말들</a></h1>
   </header>
+  <!-- Shown once, after the first sign-in. Anyone who already has a nickname is sent back to the feed. -->
   <main id="myPage" hidden>
-    <h2>마이페이지</h2>
-    <p id="setupNotice" hidden>처음 오셨네요. 글에 표시될 닉네임을 정해 주세요.</p>
+    <h2>닉네임 정하기</h2>
+    <p>처음 오셨네요. 글에 표시될 닉네임을 정해 주세요.<br>한 번 정한 닉네임은 바꿀 수 없습니다.</p>
     <form id="nicknameForm">
       <label for="nicknameInput">닉네임</label>
       <div class="me-row">
@@ -23,10 +24,7 @@
     </form>
     <p class="me-label">로그인한 구글 계정</p>
     <p id="accountEmail" class="me-hint"></p>
-    <p class="me-actions">
-      <button type="button" id="homeButton">기록으로</button>
-      <button type="button" id="signOutButton">로그아웃</button>
-    </p>
+    <p><button type="button" id="signOutButton">로그아웃</button></p>
   </main>
   <footer>
     <p>난데없는 말들&copy;2026.</p>

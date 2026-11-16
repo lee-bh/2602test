@@ -102,10 +102,14 @@ async function setNickname(request: Request, env: Env, userId: string): Promise<
   const input = await request.json().catch(() => null) as { nickname?: unknown } | null;
   const nickname = cleanNickname(input?.nickname);
   if (!nickname) return error(NICKNAME_RULE);
+  // Picked once, at the first sign-in, and kept for good.
+  if (await hasNickname(env, userId)) return error("닉네임은 한 번 정하면 바꿀 수 없습니다.", 409);
   const taken = await env.DB.prepare("SELECT id FROM users WHERE nickname = ? COLLATE NOCASE AND id <> ?").bind(nickname, userId).first();
   if (taken) return error("이미 사용 중인 닉네임입니다.", 409);
   try {
-    await env.DB.prepare("UPDATE users SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(nickname, userId).run();
+    // nickname IS NULL also stops two tabs from each setting one.
+    const result = await env.DB.prepare("UPDATE users SET nickname = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND nickname IS NULL").bind(nickname, userId).run();
+    if (!result.meta.changes) return error("닉네임은 한 번 정하면 바꿀 수 없습니다.", 409);
   } catch (cause) {
     // Someone took it between the check and the write; the unique index caught it.
     if (String(cause).includes("UNIQUE")) return error("이미 사용 중인 닉네임입니다.", 409);
