@@ -336,7 +336,10 @@ photoInput.addEventListener('change', async (event) => {
 });
 
 $('signInButton').addEventListener('click', () => { location.href = '/auth/google'; });
-$('myPageButton').addEventListener('click', () => { location.href = '/me'; });
+$('signOutButton').addEventListener('click', async () => {
+  await api('/auth/logout', { method: 'POST' }).catch(() => {});
+  location.reload();
+});
 
 function showNotice(text) {
   const notice = document.createElement('p');
@@ -365,14 +368,14 @@ async function start() {
     const { user } = await api('/api/me');
     // A new account picks its nickname before anything else.
     // null: nicknames are on and this account has none. Absent: not switched on yet.
-    if (user.nickname === null) { location.replace('/me?setup=1'); return; }
+    if (user.nickname === null) { location.replace('/me'); return; }
   } catch (error) {
     signedIn = false;
     // 401 just means a visitor; anything else is worth showing.
     showPageNotice(loginError || (error.status === 401 ? '' : error.message));
   }
   $('signInButton').hidden = signedIn;
-  $('myPageButton').hidden = !signedIn;
+  $('signOutButton').hidden = !signedIn;
   writeForm.hidden = true;
   writeToggle.hidden = !signedIn;
   if (signedIn) exitEditMode();
