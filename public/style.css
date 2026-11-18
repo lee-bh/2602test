@@ -29,7 +29,7 @@ footer{padding-bottom: 50vh;}
 .entry summary{list-style: none; cursor: pointer;}
 .entry summary::-webkit-details-marker{display: none;}
 .entry summary:focus-visible{outline: 1px dashed currentColor; outline-offset: 0.25rem;}
-/* The date at the end of the title, in the title's own type; kept whole if it wraps. */
+/* The date at the end of the body, in the body's own type; kept whole if it wraps. */
 .entry .entry-meta{white-space: nowrap;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
