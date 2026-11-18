@@ -27,7 +27,7 @@ footer{padding-bottom: 50vh;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
 /* A photo with a copyright line: the line sits under its right edge, in small type. */
 /* Comments: under the date line, a step smaller than the entry. */
-.comments{list-style: none; margin: 0; padding: 0 0 0.5rem;}
+.comments{list-style: none; margin: 0; padding: 0 0 0.5rem 5rem;}
 .entry .comments p{padding-bottom: 0;}
 .comments li{padding-bottom: 0.75rem;}
 .comment-body{white-space: pre-wrap; font-size: 0.9rem;}
