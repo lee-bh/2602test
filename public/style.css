@@ -38,7 +38,7 @@ footer{padding-bottom: 50vh;}
 /* Comments: under the date line, in the same type as the entry, the time run on at the end. */
 .comments{list-style: none; margin: 0; padding: 0 0 0 5rem;}
 .entry .comments p{padding-bottom: 0;}
-.comments li{padding-bottom: 0.75rem;}
+.comments li{padding-bottom: 1rem;}
 .comment-body{white-space: pre-wrap;}
 .comment-time{white-space: nowrap; color: #aaa;}
 .comment-delete{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
