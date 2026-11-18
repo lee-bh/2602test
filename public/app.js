@@ -200,6 +200,8 @@ function appendComments(section, comments) {
 function appendCommentForm(section, entryId) {
   const form = document.createElement('form');
   form.classList.add('comment-form');
+  // Indented with the comments when there are some; a first comment starts at the left edge.
+  form.classList.toggle('after-comments', Boolean(section.querySelector('.comments')));
   const box = document.createElement('textarea');
   box.placeholder = '댓글을 남겨보세요';
   box.maxLength = 1000;
