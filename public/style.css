@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang&display=swap');
 :root{--color-point: #ddd;}
-html{font-family: 'Gowun Batang', serif; line-height: 1.7; font-size: 20px; word-break: keep-all;
+html{font-family: 'Gowun Batang', serif; line-height: 1.7; word-break: keep-all;
 box-sizing: border-box;}
 /* keep-all never breaks inside a word, so a long link would run past a phone's screen
    and drag the page (and the buttons fixed to its right edge) wider than the screen.
@@ -89,11 +89,11 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
 #formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
 #cancelButton{margin-right: 0;}
 
-/* Below the 600px column plus the write form's 1rem sides (2 x 20px). */
+/* Below the 600px column plus the write form's 1rem sides (2 x 16px), with a little room. */
 @media (max-width: 640px) {
     :root{--color-point: #222;}
     body{background:black;}
-    html{font-size: 0.9rem; color:white;}
+    html{color:white;}
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm {left: 0px; width: 100vw;}
     #dock{right:0;}
