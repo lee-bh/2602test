@@ -108,7 +108,7 @@ function renderEntries() {
     const content = document.createElement('div');
     content.classList.add('entry-content');
     appendBody(content, entry.body);
-    content.appendChild(entryMeta(entry));
+    appendMetaToBody(content, entry);
     appendComments(content, entry.comments ?? []);
     // The feed is public. Signed in, everyone may comment; only the author may edit.
     if (signedIn) appendControls(content, entry);
@@ -120,6 +120,20 @@ function renderEntries() {
   }
   if (!entries.length) showNotice('아직 올라온 기록이 없습니다.');
   markEditingEntry();
+}
+
+// Date and author run on at the end of the body's last paragraph, in the body's own
+// type. A body that ends on a photo, or has no text, gets them as a paragraph of their own.
+function appendMetaToBody(content, entry) {
+  const last = content.lastElementChild;
+  if (last?.classList.contains('entry-body')) {
+    const meta = document.createElement('span');
+    meta.classList.add('entry-meta');
+    meta.textContent = entryMeta(entry).textContent;
+    last.append(' ', meta);
+  } else {
+    content.appendChild(entryMeta(entry));
+  }
 }
 
 function entryMeta(entry) {

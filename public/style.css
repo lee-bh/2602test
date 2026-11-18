@@ -20,6 +20,8 @@ footer{padding-bottom: 50vh;}
 .entry summary:focus-visible{outline: 1px dashed currentColor; outline-offset: 0.25rem;}
 /* Date and author sit under the title in the list and move after the body when opened. */
 .entry details[open] summary .entry-meta{display: none;}
+/* Same type as the body; only kept on one line so the date is never split. */
+.entry-content .entry-meta{white-space: nowrap;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
