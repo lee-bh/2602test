@@ -108,7 +108,14 @@ function renderEntries() {
     appendDateToBody(content, entry);
     appendComments(content, entry.comments ?? []);
     // The feed is public. Signed in, everyone may comment; only the author may edit.
-    if (signedIn) appendControls(content, entry);
+    if (signedIn) {
+      // Under comments, the buttons line up with them instead of the entry.
+      const actions = document.createElement('div');
+      actions.classList.add('entry-actions');
+      actions.classList.toggle('after-comments', Boolean(entry.comments?.length));
+      appendControls(actions, entry);
+      content.appendChild(actions);
+    }
     if (commentDrafts.has(entry.id)) appendCommentForm(content, entry.id);
     details.appendChild(content);
 
