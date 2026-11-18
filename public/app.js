@@ -162,7 +162,7 @@ function commentTime(createdAt) {
   const at = new Date(createdAt.replace(' ', 'T') + 'Z');
   if (Number.isNaN(at.getTime())) return '';
   const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(at.getMonth() + 1)}. ${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+  return `${pad(at.getMonth() + 1)}.${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
 }
 
 function appendComments(section, comments) {
@@ -172,20 +172,25 @@ function appendComments(section, comments) {
   for (const comment of comments) {
     const item = document.createElement('li');
     item.dataset.commentId = comment.id;
+    // No author: just the words, with the time in brackets run on at the end,
+    // as in 이렇게 댓글이 되는데요(11.18 17:12).
     const body = document.createElement('p');
     body.classList.add('comment-body');
     body.textContent = comment.body;
-    item.appendChild(body);
-    const meta = document.createElement('p');
-    meta.classList.add('comment-meta');
-    meta.textContent = [comment.author, commentTime(comment.created_at)].filter(Boolean).join(' · ');
+    const time = commentTime(comment.created_at);
+    if (time) {
+      const stamp = document.createElement('span');
+      stamp.classList.add('comment-time');
+      stamp.textContent = `(${time})`;
+      body.appendChild(stamp);
+    }
     if (comment.mine) {
       const remove = document.createElement('button');
       remove.classList.add('comment-delete');
       remove.textContent = '삭제';
-      meta.appendChild(remove);
+      body.appendChild(remove);
     }
-    item.appendChild(meta);
+    item.appendChild(body);
     list.appendChild(item);
   }
   section.appendChild(list);
