@@ -122,15 +122,16 @@ function renderEntries() {
   markEditingEntry();
 }
 
-// Date and author run on at the end of the body's last paragraph, in the body's own
-// type. A body that ends on a photo, or has no text, gets them as a paragraph of their own.
+// The date closes the body's last paragraph on a line of its own, in the body's own type.
+// A body that ends on a photo, or has no text, gets it as a paragraph of its own.
 function appendMetaToBody(content, entry) {
   const last = content.lastElementChild;
   if (last?.classList.contains('entry-body')) {
     const meta = document.createElement('span');
     meta.classList.add('entry-meta');
     meta.textContent = entryMeta(entry).textContent;
-    last.append(' ', meta);
+    // On the next line of the same paragraph: no gap above it.
+    last.append(document.createElement('br'), meta);
   } else {
     content.appendChild(entryMeta(entry));
   }
@@ -139,7 +140,8 @@ function appendMetaToBody(content, entry) {
 function entryMeta(entry) {
   const meta = document.createElement('p');
   meta.classList.add('entry-meta');
-  meta.textContent = [entry.entry_date.replaceAll('-', '. '), entry.author].filter(Boolean).join(' · ');
+  // The date alone; the author is not shown.
+  meta.textContent = entry.entry_date.replaceAll('-', '. ');
   return meta;
 }
 
