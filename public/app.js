@@ -156,7 +156,7 @@ function commentTime(createdAt) {
   const at = new Date(createdAt.replace(' ', 'T') + 'Z');
   if (Number.isNaN(at.getTime())) return '';
   const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(at.getMonth() + 1)}.${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+  return `${pad(at.getMonth() + 1)}.${pad(at.getDate())}`;
 }
 
 function appendComments(section, comments) {
@@ -167,7 +167,7 @@ function appendComments(section, comments) {
     const item = document.createElement('li');
     item.dataset.commentId = comment.id;
     // No author: just the words, with the time in brackets run on at the end,
-    // as in 이렇게 댓글이 되는데요(11.18 17:12).
+    // as in 이렇게 댓글이 되는데요(11.18).
     const body = document.createElement('p');
     body.classList.add('comment-body');
     body.textContent = comment.body;
