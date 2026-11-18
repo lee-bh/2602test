@@ -6,6 +6,8 @@ box-sizing: border-box;}
    and drag the page (and the buttons fixed to its right edge) wider than the screen.
    A word that cannot fit on a line of its own is broken instead. */
 html{overflow-wrap: break-word;}
+/* 20px on a PC. Phones (640px and below) keep the browser's own size. */
+@media (min-width: 641px){html{font-size: 20px;}}
 /* box-sizing is not inherited by default, so without this the inputs
    render wider than the form and push a horizontal scrollbar on narrow screens. */
 *, *::before, *::after{box-sizing: inherit;}
@@ -89,7 +91,7 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
 #formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
 #cancelButton{margin-right: 0;}
 
-/* Below the 600px column plus the write form's 1rem sides (2 x 16px), with a little room. */
+/* Below the 600px column plus the write form's 1rem sides (2 x 20px on a PC). */
 @media (max-width: 640px) {
     :root{--color-point: #222;}
     body{background:black;}
