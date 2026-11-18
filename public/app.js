@@ -99,14 +99,13 @@ function renderEntries() {
     const title = document.createElement('h2');
     // textContent so < and > typed into an entry are not read as tags
     title.textContent = entry.title || '(제목 없음)';
-    // The date runs on at the end of the title, on the same line.
-    title.append(' ', entryMeta(entry));
     summary.appendChild(title);
     details.appendChild(summary);
 
     const content = document.createElement('div');
     content.classList.add('entry-content');
     appendBody(content, entry.body);
+    appendDateToBody(content, entry);
     appendComments(content, entry.comments ?? []);
     // The feed is public. Signed in, everyone may comment; only the author may edit.
     if (signedIn) appendControls(content, entry);
@@ -120,12 +119,22 @@ function renderEntries() {
   markEditingEntry();
 }
 
-function entryMeta(entry) {
+// The date, month and day in brackets, runs straight on from the body's last words, as in
+// 이제서야 감이 잡힌다.(11.18). A body ending on a photo, or with no text, gets it as a
+// paragraph of its own.
+function appendDateToBody(content, entry) {
+  const [, month, day] = entry.entry_date.split('-');
   const meta = document.createElement('span');
   meta.classList.add('entry-meta');
-  // The date alone; the author is not shown.
-  meta.textContent = entry.entry_date.replaceAll('-', '. ');
-  return meta;
+  meta.textContent = `(${month}.${day})`;
+  const last = content.lastElementChild;
+  if (last?.classList.contains('entry-body')) {
+    last.appendChild(meta);
+  } else {
+    const paragraph = document.createElement('p');
+    paragraph.appendChild(meta);
+    content.appendChild(paragraph);
+  }
 }
 
 // [댓글달기] on every entry, then [수정하기] on one's own. Deleting an entry is done from
