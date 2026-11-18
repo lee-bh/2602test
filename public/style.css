@@ -26,16 +26,15 @@ footer{padding-bottom: 50vh;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
 /* A photo with a copyright line: the line sits under its right edge, in small type. */
-/* Comments: under the date line, a step smaller than the entry. */
+/* Comments: under the date line, in the same type as the entry. */
 .comments{list-style: none; margin: 0; padding: 0 0 0.5rem 5rem;}
 .entry .comments p{padding-bottom: 0;}
 .comments li{padding-bottom: 0.75rem;}
-.comment-body{white-space: pre-wrap; font-size: 1rem;}
-.comment-meta{font-size: 1rem;}
-.comment-delete{font-size: 0.75rem; margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
-.comment-form textarea{display: block; width: 100%; height: 5rem; padding: 0.5rem; resize: vertical; font-size: 0.9rem;}
+.comment-body{white-space: pre-wrap;}
+.comment-delete{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
+.comment-form textarea{display: block; width: 100%; height: 5rem; padding: 0.5rem; resize: vertical;}
 .comment-form-row{display: flex; align-items: center; padding-top: 0.5rem;}
-.entry .comment-form-row p{flex: 1; min-width: 0; padding: 0 0.5rem 0 0; font-size: 0.8rem;}
+.entry .comment-form-row p{flex: 1; min-width: 0; padding: 0 0.5rem 0 0;}
 .comment-form-row button:last-child{margin-right: 0;}
 figure.entry-image{margin: 0;}
 figure.entry-image img{display:block; max-width: 100%;}
