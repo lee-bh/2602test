@@ -119,17 +119,17 @@ function renderEntries() {
   markEditingEntry();
 }
 
-// The date, month and day in brackets, runs straight on from the body's last words, as in
-// 이제서야 감이 잡힌다.(11.18). A body ending on a photo, or with no text, gets it as a
+// The date, month and day in light grey, follows the body's last words, as in
+// 이제서야 감이 잡힌다. 11.18. A body ending on a photo, or with no text, gets it as a
 // paragraph of its own.
 function appendDateToBody(content, entry) {
   const [, month, day] = entry.entry_date.split('-');
   const meta = document.createElement('span');
   meta.classList.add('entry-meta');
-  meta.textContent = `(${month}.${day})`;
+  meta.textContent = `${month}.${day}`;
   const last = content.lastElementChild;
   if (last?.classList.contains('entry-body')) {
-    last.appendChild(meta);
+    last.append(' ', meta);
   } else {
     const paragraph = document.createElement('p');
     paragraph.appendChild(meta);
@@ -167,7 +167,7 @@ function appendComments(section, comments) {
     const item = document.createElement('li');
     item.dataset.commentId = comment.id;
     // No author: just the words, with the time in brackets run on at the end,
-    // as in 이렇게 댓글이 되는데요(11.18).
+    // in light grey, as in 이렇게 댓글이 되는데요 11.18
     const body = document.createElement('p');
     body.classList.add('comment-body');
     body.textContent = comment.body;
@@ -175,8 +175,8 @@ function appendComments(section, comments) {
     if (time) {
       const stamp = document.createElement('span');
       stamp.classList.add('comment-time');
-      stamp.textContent = `(${time})`;
-      body.appendChild(stamp);
+      stamp.textContent = time;
+      body.append(' ', stamp);
     }
     if (comment.mine) {
       const remove = document.createElement('button');
