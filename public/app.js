@@ -162,7 +162,7 @@ function commentTime(createdAt) {
   const at = new Date(createdAt.replace(' ', 'T') + 'Z');
   if (Number.isNaN(at.getTime())) return '';
   const pad = (n) => String(n).padStart(2, '0');
-  return `${at.getFullYear()}. ${pad(at.getMonth() + 1)}. ${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+  return `${pad(at.getMonth() + 1)}. ${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
 }
 
 function appendComments(section, comments) {
