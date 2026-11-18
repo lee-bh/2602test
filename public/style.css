@@ -2,6 +2,10 @@
 :root{--color-point: #ddd;}
 html{font-family: 'Gowun Batang', serif; line-height: 1.7; font-size: 20px; word-break: keep-all;
 box-sizing: border-box;}
+/* keep-all never breaks inside a word, so a long link would run past a phone's screen
+   and drag the page (and the buttons fixed to its right edge) wider than the screen.
+   A word that cannot fit on a line of its own is broken instead. */
+html{overflow-wrap: break-word;}
 /* box-sizing is not inherited by default, so without this the inputs
    render wider than the form and push a horizontal scrollbar on narrow screens. */
 *, *::before, *::after{box-sizing: inherit;}
@@ -93,6 +97,7 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm {left: 0px; width: 100vw;}
     #dock{right:0;}
+    .comments{padding-left: 3rem;}
     #entryDate, #entryTitle, #entryText, .photo-credit, #nicknameInput, .comment-form textarea{color:#eee;}
     #entryDate{color-scheme: dark;}
     button{color:#eee;}
