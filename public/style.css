@@ -29,8 +29,8 @@ footer{padding-bottom: 50vh;}
 .entry summary{list-style: none; cursor: pointer;}
 .entry summary::-webkit-details-marker{display: none;}
 .entry summary:focus-visible{outline: 1px dashed currentColor; outline-offset: 0.25rem;}
-/* The date at the end of the body, in the body's own type; kept whole if it wraps. */
-.entry .entry-meta{white-space: nowrap;}
+/* The date at the end of the body, in light grey; kept whole if it wraps. */
+.entry .entry-meta{white-space: nowrap; color: #ccc;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
@@ -40,7 +40,7 @@ footer{padding-bottom: 50vh;}
 .entry .comments p{padding-bottom: 0;}
 .comments li{padding-bottom: 0.75rem;}
 .comment-body{white-space: pre-wrap;}
-.comment-time{white-space: nowrap;}
+.comment-time{white-space: nowrap; color: #ccc;}
 .comment-delete{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
 .comment-form textarea{display: block; width: 100%; height: 5rem; padding: 0.5rem; resize: vertical;}
 .comment-form-row{display: flex; align-items: center; padding-top: 0.5rem;}
