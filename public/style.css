@@ -103,6 +103,7 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm {left: 0px; width: 100vw;}
     #dock{right:0;}
+    #formBottom{padding-left:0; padding-right:0;}
     .comments, .comment-form, .entry-actions.after-comments{padding-left: 3rem;}
     #entryDate, #entryTitle, #entryText, .photo-credit, #nicknameInput, .comment-form textarea{color:#eee;}
     #entryDate{color-scheme: dark;}
