@@ -6,8 +6,12 @@ box-sizing: border-box;}
    and drag the page (and the buttons fixed to its right edge) wider than the screen.
    A word that cannot fit on a line of its own is broken instead. */
 html{overflow-wrap: break-word;}
-/* 20px on a PC. Phones (640px and below) keep the browser's own size. */
-@media (min-width: 641px){html{font-size: 20px;}}
+/* On a PC: 20px type, and entry text kept 5rem short of the column's right edge.
+   Phones (640px and below) keep the browser's own size and the full width. */
+@media (min-width: 641px){
+  html{font-size: 20px;}
+  .entry .entry-body{padding-right: 5rem;}
+}
 /* box-sizing is not inherited by default, so without this the inputs
    render wider than the form and push a horizontal scrollbar on narrow screens. */
 *, *::before, *::after{box-sizing: inherit;}
