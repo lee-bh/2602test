@@ -42,6 +42,7 @@ footer{padding-bottom: 50vh;}
 .comment-body{white-space: pre-wrap;}
 .comment-time{white-space: nowrap; color: #aaa;}
 .comment-delete{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
+.comment-form{padding-left: 5rem;}
 .comment-form textarea{display: block; width: 100%; height: 5rem; padding: 0.5rem; resize: vertical;}
 .comment-form-row{display: flex; align-items: center; padding-top: 0.5rem;}
 .entry .comment-form-row p{flex: 1; min-width: 0; padding: 0 0.5rem 0 0;}
@@ -102,7 +103,7 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm {left: 0px; width: 100vw;}
     #dock{right:0;}
-    .comments{padding-left: 3rem;}
+    .comments, .comment-form{padding-left: 3rem;}
     #entryDate, #entryTitle, #entryText, .photo-credit, #nicknameInput, .comment-form textarea{color:#eee;}
     #entryDate{color-scheme: dark;}
     button{color:#eee;}
