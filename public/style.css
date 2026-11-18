@@ -93,7 +93,7 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
 @media (max-width: 640px) {
     :root{--color-point: #222;}
     body{background:black;}
-    html{font-size: 17px; color:white;}
+    html{font-size: 0.9rem; color:white;}
     header, main, footer{width: calc(100% - 2rem);}
     #writeForm {left: 0px; width: 100vw;}
     #dock{right:0;}
