@@ -99,16 +99,14 @@ function renderEntries() {
     const title = document.createElement('h2');
     // textContent so < and > typed into an entry are not read as tags
     title.textContent = entry.title || '(제목 없음)';
+    // The date runs on at the end of the title, on the same line.
+    title.append(' ', entryMeta(entry));
     summary.appendChild(title);
-    // Shown under the title while folded and after the body once opened; CSS hides
-    // whichever copy does not apply.
-    summary.appendChild(entryMeta(entry));
     details.appendChild(summary);
 
     const content = document.createElement('div');
     content.classList.add('entry-content');
     appendBody(content, entry.body);
-    appendMetaToBody(content, entry);
     appendComments(content, entry.comments ?? []);
     // The feed is public. Signed in, everyone may comment; only the author may edit.
     if (signedIn) appendControls(content, entry);
@@ -122,23 +120,8 @@ function renderEntries() {
   markEditingEntry();
 }
 
-// The date closes the body's last paragraph on a line of its own, in the body's own type.
-// A body that ends on a photo, or has no text, gets it as a paragraph of its own.
-function appendMetaToBody(content, entry) {
-  const last = content.lastElementChild;
-  if (last?.classList.contains('entry-body')) {
-    const meta = document.createElement('span');
-    meta.classList.add('entry-meta');
-    meta.textContent = entryMeta(entry).textContent;
-    // On the next line of the same paragraph: no gap above it.
-    last.append(document.createElement('br'), meta);
-  } else {
-    content.appendChild(entryMeta(entry));
-  }
-}
-
 function entryMeta(entry) {
-  const meta = document.createElement('p');
+  const meta = document.createElement('span');
   meta.classList.add('entry-meta');
   // The date alone; the author is not shown.
   meta.textContent = entry.entry_date.replaceAll('-', '. ');

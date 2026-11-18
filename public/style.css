@@ -21,17 +21,15 @@ header{padding:4rem 0 2rem;}
 footer{padding-bottom: 50vh;}
 #entryContainer{padding:2rem 0rem;}
 .entry{padding: 2rem 0;}
-.entry h2, #entryTitle{font-size: 1.5rem;}
+#entryTitle{font-size: 1.5rem;}
 .entry p{padding-bottom: 1rem; word-spacing: -0.1rem;}
 /* Sizes and spacing follow verse-note. The title only adds the switch that opens the
    entry; the browser's triangle is dropped so it reads as a plain heading. */
 .entry summary{list-style: none; cursor: pointer;}
 .entry summary::-webkit-details-marker{display: none;}
 .entry summary:focus-visible{outline: 1px dashed currentColor; outline-offset: 0.25rem;}
-/* Date and author sit under the title in the list and move after the body when opened. */
-.entry details[open] summary .entry-meta{display: none;}
-/* Same type as the body; only kept on one line so the date is never split. */
-.entry-content .entry-meta{white-space: nowrap;}
+/* The date at the end of the title, in the title's own type; kept whole if it wraps. */
+.entry .entry-meta{white-space: nowrap;}
 .entry .entry-body{white-space: pre-wrap;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 .entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
