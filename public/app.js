@@ -110,19 +110,6 @@ function renderEntries() {
     section.classList.add('entry');
     section.dataset.id = entry.id;
 
-    const details = document.createElement('details');
-    details.open = !closedIds.has(entry.id);
-    details.addEventListener('toggle', () => {
-      if (details.open) closedIds.delete(entry.id); else closedIds.add(entry.id);
-    });
-
-    const summary = document.createElement('summary');
-    const title = document.createElement('h2');
-    // textContent so < and > typed into an entry are not read as tags
-    title.textContent = entry.title || '(제목 없음)';
-    summary.appendChild(title);
-    details.appendChild(summary);
-
     const content = document.createElement('div');
     content.classList.add('entry-content');
     appendBody(content, entry.body);
@@ -138,9 +125,26 @@ function renderEntries() {
       content.appendChild(actions);
     }
     if (commentDrafts.has(entry.id)) appendCommentForm(content, entry.id);
-    details.appendChild(content);
 
-    section.appendChild(details);
+    if (entry.title) {
+      // The title folds and unfolds the entry.
+      const details = document.createElement('details');
+      details.open = !closedIds.has(entry.id);
+      details.addEventListener('toggle', () => {
+        if (details.open) closedIds.delete(entry.id); else closedIds.add(entry.id);
+      });
+      const summary = document.createElement('summary');
+      const title = document.createElement('h2');
+      // textContent so < and > typed into an entry are not read as tags
+      title.textContent = entry.title;
+      summary.appendChild(title);
+      details.append(summary, content);
+      section.appendChild(details);
+    } else {
+      // No title, no heading: the body stands on its own and is always open. (A
+      // details without a summary would get the browser's own "Details" label.)
+      section.appendChild(content);
+    }
     entryContainer.appendChild(section);
   }
   if (!entries.length) showNotice('아직 올라온 기록이 없습니다.');
