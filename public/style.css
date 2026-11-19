@@ -72,7 +72,7 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
 #writeForm[hidden]{display:none;}
 #entryTitle, #entryText{background:transparent; width: 100%; padding:1rem;}
 #entryTitle{padding-bottom:0;}
-#entryText{flex:1; min-height:0; resize:none; word-spacing: -0.1rem; padding-top:0; padding-bottom:0.5rem;}
+#entryText{flex:1; min-height:0; resize:none; word-spacing: -0.1rem; padding-top:0; padding-right:6rem; padding-bottom:0.5rem;}
 /* Uploaded, not yet placed in the text. */
 #photoStrip{display:flex; flex:none; gap:0.75rem; align-items:center; padding:0 1rem 0.5rem; overflow-x:auto;}
 #photoStrip[hidden]{display:none;}
