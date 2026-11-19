@@ -61,6 +61,7 @@ async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<R
   const commentsMatch = path.match(/^\/api\/entries\/([\w-]+)\/comments$/);
   if (commentsMatch && request.method === "POST") return createComment(request, env, session.userId, commentsMatch[1]);
   const commentMatch = path.match(/^\/api\/comments\/([\w-]+)$/);
+  if (commentMatch && request.method === "PUT") return updateComment(request, env, session.userId, commentMatch[1]);
   if (commentMatch && request.method === "DELETE") return deleteComment(env, session.userId, commentMatch[1]);
   const entryMatch = path.match(/^\/api\/entries\/([\w-]+)$/);
   if (entryMatch) {
@@ -107,8 +108,7 @@ async function listComments(env: Env, userId: string | null, author: string): Pr
 }
 
 async function createComment(request: Request, env: Env, userId: string, entryId: string): Promise<Response> {
-  const input = await request.json().catch(() => null) as { body?: unknown } | null;
-  const body = typeof input?.body === "string" ? input.body.trim() : "";
+  const body = commentBody(await request.json().catch(() => null) as { body?: unknown } | null);
   if (!body || body.length > 1000) return error("댓글은 1~1000자로 써 주세요.");
   if (await nicknamesReady(env) && !(await hasNickname(env, userId))) return error("닉네임을 먼저 정해 주세요.", 403);
   if (!(await env.DB.prepare("SELECT id FROM entries WHERE id = ?").bind(entryId).first())) return error("글을 찾을 수 없습니다.", 404);
@@ -120,6 +120,17 @@ async function createComment(request: Request, env: Env, userId: string, entryId
     throw cause;
   }
   return json({ comment: { id: commentId, entry_id: entryId, body } }, 201);
+}
+
+const commentBody = (input: { body?: unknown } | null) => typeof input?.body === "string" ? input.body.trim() : "";
+
+// Only the person who wrote a comment can change it. Its date stays the date it was written.
+async function updateComment(request: Request, env: Env, userId: string, commentId: string): Promise<Response> {
+  const body = commentBody(await request.json().catch(() => null) as { body?: unknown } | null);
+  if (!body || body.length > 1000) return error("댓글은 1~1000자로 써 주세요.");
+  const result = await env.DB.prepare("UPDATE comments SET body = ? WHERE id = ? AND user_id = ?").bind(body, commentId, userId).run();
+  if (!result.meta.changes) return error("댓글을 찾을 수 없습니다.", 404);
+  return json({ comment: { id: commentId, body } });
 }
 
 // Only the person who wrote a comment can remove it.

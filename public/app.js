@@ -38,6 +38,8 @@ let signedIn = false;
 // Entries whose comment box is open, and what was typed in each, so redrawing the feed
 // (after a save elsewhere) neither closes a box nor loses its text.
 const commentDrafts = new Map();
+// Comments being edited in place, with their text so far, kept across redraws the same way.
+const commentEdits = new Map();
 
 // Walk the body in order so a photo lands between the paragraphs it was written between,
 // rather than every photo being collected at the end.
@@ -173,6 +175,12 @@ function appendComments(section, comments) {
   for (const comment of comments) {
     const item = document.createElement('li');
     item.dataset.commentId = comment.id;
+    if (comment.mine && commentEdits.has(comment.id)) {
+      // Being edited: the comment's own place holds the comment box instead.
+      item.appendChild(commentEditForm(comment));
+      list.appendChild(item);
+      continue;
+    }
     // No author: just the words, with the time in brackets run on at the end,
     // in light grey, as in 이렇게 댓글이 되는데요 11.18
     const body = document.createElement('p');
@@ -186,6 +194,10 @@ function appendComments(section, comments) {
       body.append(' ', stamp);
     }
     if (comment.mine) {
+      const edit = document.createElement('button');
+      edit.classList.add('comment-edit');
+      edit.textContent = '수정';
+      body.appendChild(edit);
       const remove = document.createElement('button');
       remove.classList.add('comment-delete');
       remove.textContent = '삭제';
@@ -195,6 +207,62 @@ function appendComments(section, comments) {
     list.appendChild(item);
   }
   section.appendChild(list);
+}
+
+// The same box as a new comment, filled with the comment, with 수정완료 and 취소.
+function commentEditForm(comment) {
+  const form = document.createElement('form');
+  form.classList.add('comment-form');
+  const box = document.createElement('textarea');
+  box.maxLength = 1000;
+  box.setAttribute('aria-label', '댓글 수정');
+  box.value = commentEdits.get(comment.id) ?? comment.body;
+  box.addEventListener('input', () => commentEdits.set(comment.id, box.value));
+  form.appendChild(box);
+  const row = document.createElement('div');
+  row.classList.add('comment-form-row');
+  const message = document.createElement('p');
+  message.classList.add('comment-message');
+  message.setAttribute('aria-live', 'polite');
+  row.appendChild(message);
+  const submit = document.createElement('button');
+  submit.textContent = '수정완료';
+  row.appendChild(submit);
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.classList.add('comment-edit-cancel');
+  cancel.textContent = '취소';
+  row.appendChild(cancel);
+  form.appendChild(row);
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!box.value.trim()) { box.focus(); return; }
+    submit.disabled = true;
+    try {
+      await api(`/api/comments/${comment.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: box.value }) });
+      commentEdits.delete(comment.id);
+      await loadEntries();
+    } catch (error) {
+      message.textContent = error.message;
+      submit.disabled = false;
+    }
+  });
+  return form;
+}
+
+function editComment(commentId) {
+  const comment = entries.flatMap((entry) => entry.comments ?? []).find((item) => item.id === commentId);
+  if (!comment) return;
+  commentEdits.set(commentId, comment.body);
+  renderEntries();
+  const box = entryContainer.querySelector(`li[data-comment-id="${commentId}"] textarea`);
+  box?.focus();
+  box?.setSelectionRange(box.value.length, box.value.length);
+}
+
+function cancelCommentEdit(commentId) {
+  commentEdits.delete(commentId);
+  renderEntries();
 }
 
 function appendCommentForm(section, entryId) {
@@ -311,6 +379,8 @@ entryContainer.addEventListener('click', (event) => {
   else if (button.classList.contains('comment-button')) toggleCommentForm(section, section.dataset.id);
   else if (button.classList.contains('comment-cancel')) toggleCommentForm(section, section.dataset.id);
   else if (button.classList.contains('comment-delete')) deleteComment(button.closest('li').dataset.commentId);
+  else if (button.classList.contains('comment-edit')) editComment(button.closest('li').dataset.commentId);
+  else if (button.classList.contains('comment-edit-cancel')) cancelCommentEdit(button.closest('li').dataset.commentId);
 });
 
 saveButton.addEventListener('click', onSave);
