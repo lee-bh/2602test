@@ -66,9 +66,9 @@ figure.entry-image figcaption{font-size: 0.75rem; text-align: right; padding-top
 
 /* ---- Write panel ----
    The form carries the panel colour so the inputs and the bottom row read as one block.
-   글쓰기 raises it to 80vh, and the text box takes whatever height the other rows leave. */
+   글쓰기 raises it to 50vh, and the text box takes whatever height the other rows leave. */
 #writeForm{position: fixed; left: calc(50% - 300px - 1rem); bottom: 0; width: calc(600px + 2rem);
-background:var(--color-point); display:flex; flex-direction:column; height:80vh;}
+background:var(--color-point); display:flex; flex-direction:column; height:50vh;}
 #writeForm[hidden]{display:none;}
 #entryTitle, #entryText{background:transparent; width: 100%; padding:1rem;}
 #entryTitle{padding-bottom:0;}
