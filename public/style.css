@@ -40,8 +40,7 @@ footer{padding-bottom: 50vh;}
 .comments li{padding-bottom: 1rem;}
 .comment-body{white-space: pre-wrap;}
 .comment-time{white-space: nowrap; color: #aaa;}
-.comment-edit, .comment-delete{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
-.comment-edit + .comment-delete{margin-left: 0.3rem;}
+.comment-edit{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
 .comment-form.after-comments, .entry-actions.after-comments{padding-left: 5rem;}
 .comment-form textarea{display: block; width: calc(100% - 1rem); height: 5rem; padding: 0.5rem; resize: vertical;}
 .comment-form-row{display: flex; align-items: center; padding-top: 0.5rem;}
