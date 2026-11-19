@@ -90,7 +90,7 @@ background:var(--color-point); display:flex; flex-direction:column; height:80vh;
 /* Shares the panel colour, so an underline marks where to type. */
 .photo-credit{width:9rem; font-size:0.8rem; background:transparent; border-bottom:1px solid currentColor; padding:0 0.2rem;}
 #photoStrip, #formBottom{flex:none;}
-#formBottom{display:flex; align-items:center; padding:0 1rem 1rem;}
+#formBottom{display:flex; align-items:center; padding:0 1rem;}
 #formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
 #cancelButton{margin-right: 0;}
 
