@@ -198,10 +198,6 @@ function appendComments(section, comments) {
       edit.classList.add('comment-edit');
       edit.textContent = '수정';
       body.appendChild(edit);
-      const remove = document.createElement('button');
-      remove.classList.add('comment-delete');
-      remove.textContent = '삭제';
-      body.appendChild(remove);
     }
     item.appendChild(body);
     list.appendChild(item);
@@ -209,7 +205,7 @@ function appendComments(section, comments) {
   section.appendChild(list);
 }
 
-// The same box as a new comment, filled with the comment, with 수정완료 and 취소.
+// The same box as a new comment, filled with the comment, with 삭제, 수정완료 and 취소.
 function commentEditForm(comment) {
   const form = document.createElement('form');
   form.classList.add('comment-form');
@@ -226,6 +222,12 @@ function commentEditForm(comment) {
   message.setAttribute('aria-live', 'polite');
   row.appendChild(message);
   const submit = document.createElement('button');
+  // Deleting a comment is done from here, as an entry is from its edit panel.
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.classList.add('comment-delete');
+  remove.textContent = '삭제';
+  row.appendChild(remove);
   submit.textContent = '수정완료';
   row.appendChild(submit);
   const cancel = document.createElement('button');
@@ -325,6 +327,7 @@ async function deleteComment(commentId) {
     window.alert(error.message);
     return;
   }
+  commentEdits.delete(commentId);
   await loadEntries();
 }
 
