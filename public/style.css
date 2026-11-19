@@ -39,6 +39,8 @@ footer{padding-bottom: 50vh;}
 .entry .comments p{padding-bottom: 0;}
 .comments li{padding-bottom: 1rem;}
 .comment-body{white-space: pre-wrap;}
+/* Links in entries and comments: the text's own colour, underlined. */
+.entry-body a, .comment-body a{color: inherit; text-decoration: underline;}
 .comment-time{white-space: nowrap; color: #aaa;}
 .comment-edit{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
 .comment-form.after-comments, .entry-actions.after-comments{padding-left: 5rem;}

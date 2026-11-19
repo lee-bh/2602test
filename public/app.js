@@ -75,8 +75,27 @@ function appendText(section, text) {
   if (!trimmed) return;
   const paragraph = document.createElement('p');
   paragraph.classList.add('entry-body');
-  paragraph.textContent = trimmed;
+  appendLinkedText(paragraph, trimmed);
   section.appendChild(paragraph);
+}
+
+// Web addresses in the text become links that open in a new window. Only http(s) is
+// linked, and punctuation that closes a sentence is left outside the link.
+const WEB_ADDRESS = /https?:\/\/[^\s<>"']+/g;
+function appendLinkedText(element, text) {
+  let cursor = 0;
+  for (const match of text.matchAll(WEB_ADDRESS)) {
+    const address = match[0].replace(/[.,;:!?)\]}'"]+$/, '');
+    element.append(text.slice(cursor, match.index));
+    const link = document.createElement('a');
+    link.href = address;
+    link.textContent = address;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    element.appendChild(link);
+    cursor = match.index + address.length;
+  }
+  element.append(text.slice(cursor));
 }
 
 // Every entry starts open. The ones the reader folded are remembered across redraws, so
@@ -185,7 +204,7 @@ function appendComments(section, comments) {
     // in light grey, as in 이렇게 댓글이 되는데요 11.18
     const body = document.createElement('p');
     body.classList.add('comment-body');
-    body.textContent = comment.body;
+    appendLinkedText(body, comment.body);
     const time = commentTime(comment.created_at);
     if (time) {
       const stamp = document.createElement('span');
