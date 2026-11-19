@@ -69,7 +69,7 @@ button{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
 
 /* Bottom-right buttons, flush with the column's right edge: 구글로그인 for a visitor,
    마이페이지 and 글쓰기 once signed in. */
-#dock{position:fixed; bottom:0.5rem; right:calc(50% - 300px - 1rem); display:flex; gap:0.5rem;}
+#dock{position:fixed; bottom:1rem; right:calc(50% - 300px - 1rem); display:flex; gap:0.5rem;}
 #dock[hidden]{display:none;}
 #dock button{margin:0; padding: 0.1rem 1rem;}
 
