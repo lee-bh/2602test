@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
 :root{--color-point: #ddd;}
 html{font-family: 'Gowun Batang', serif; line-height: 1.7; word-break: keep-all;
 box-sizing: border-box;}
@@ -21,7 +21,7 @@ header{padding:3rem 0;}
 footer{padding: 2rem 0 50vh;}
 .entry{padding: 2rem 0;}
 #entryTitle{font-size: 1.5rem;}
-.entry h2{font-size: 1rem;}
+.entry h2{font-size: 1rem; font-weight: 700;}
 .entry p{padding-bottom: 1rem; word-spacing: -0.1rem;}
 /* Sizes and spacing follow verse-note. The title only adds the switch that opens the
    entry; the browser's triangle is dropped so it reads as a plain heading. */
