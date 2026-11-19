@@ -1,113 +1,120 @@
-@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang&display=swap');
+
+/* ---- Base ---- */
 :root{--color-point: #ddd;}
-html{font-family: 'Gowun Batang', serif; line-height: 1.7; word-break: keep-all;
-box-sizing: border-box;}
 /* keep-all never breaks inside a word, so a long link would run past a phone's screen
    and drag the page (and the buttons fixed to its right edge) wider than the screen.
-   A word that cannot fit on a line of its own is broken instead. */
-html{overflow-wrap: break-word;}
-/* On a PC: 20px type, and entry text kept 5rem short of the column's right edge.
-   Phones (640px and below) keep the browser's own size and the full width. */
-@media (min-width: 641px){
-  html{font-size: 20px;}
-  .entry .entry-body{padding-right: 5rem;}
-}
+   overflow-wrap breaks a word that cannot fit on a line of its own instead. */
+html{font-family: 'Gowun Batang', serif; line-height: 1.7; word-break: keep-all; overflow-wrap: break-word;
+box-sizing: border-box;}
 /* box-sizing is not inherited by default, so without this the inputs
    render wider than the form and push a horizontal scrollbar on narrow screens. */
 *, *::before, *::after{box-sizing: inherit;}
-body, h1, h2, ul, ol, p{font-weight:normal; margin: 0; padding: 0;}
-header, main, footer, #writeForm{width: 600px; margin: 0 auto;}
+body, h1, h2, ul, p{font-weight:normal; margin: 0; padding: 0;}
+button, input, textarea{color:black; line-height: 1.7; font-size: 1rem; font-family: 'Gowun Batang', serif;
+word-break: keep-all; border:none; background:var(--color-point); outline:none;}
+button{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
+button:hover{background:black; color:white;}
+
+/* ---- Page ---- */
+header, main, footer{width: 600px; margin: 0 auto;}
 header{padding:3rem 0;}
 footer{padding: 2rem 0 50vh;}
+h1 a{color: inherit; text-decoration: none;}
+.notice{padding: 2rem 0;}
+
+/* ---- Entries ---- */
 .entry{padding: 2rem 0;}
-#entryTitle{font-size: 1.5rem;}
-.entry h2{font-size: 1rem; font-weight: 700;}
-.entry p{padding-bottom: 1rem; word-spacing: -0.1rem;}
-/* Sizes and spacing follow verse-note. The title only adds the switch that opens the
-   entry; the browser's triangle is dropped so it reads as a plain heading. */
+.entry h2{font-size: 1rem;}
+.entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
+/* The title is the switch that folds the entry; the browser's triangle is dropped so it
+   reads as a plain heading. */
 .entry summary{list-style: none; cursor: pointer;}
 .entry summary::-webkit-details-marker{display: none;}
 .entry summary:focus-visible{outline: 1px dashed currentColor; outline-offset: 0.25rem;}
-/* The date at the end of the body, in light grey; kept whole if it wraps. */
-.entry .entry-meta{white-space: nowrap; color: #aaa;}
-.entry .entry-body{white-space: pre-wrap;}
-.entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
-.entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
-/* A photo with a copyright line: the line sits under its right edge, in small type. */
-/* Comments: under the date line, in the same type as the entry, the time run on at the end. */
-.comments{list-style: none; margin: 0; padding: 0 0 0 5rem;}
-.entry .comments p{padding-bottom: 0;}
-.comments li{padding-bottom: 1rem;}
-.comment-body{white-space: pre-wrap;}
+.entry p{padding-bottom: 1rem; word-spacing: -0.1rem;}
+.entry-body, .comment-body{white-space: pre-wrap;}
 /* Links in entries and comments: the text's own colour, underlined. */
 .entry-body a, .comment-body a{color: inherit; text-decoration: underline;}
-.comment-time{white-space: nowrap; color: #aaa;}
+/* The date at the end of an entry or a comment, in light grey; kept whole if it wraps. */
+.entry-meta, .comment-time{white-space: nowrap; color: #aaa;}
+.entry-image{display:block; max-width: 100%; padding-bottom: 1rem;}
+/* A photo with a copyright line: the line sits under its right edge, in small type. */
+figure.entry-image{margin: 0;}
+figure.entry-image img{display:block; max-width: 100%;}
+figure.entry-image figcaption{font-size: 0.75rem; text-align: right; padding-top: 0.25rem;}
+
+/* ---- Comments ----
+   Indented under the entry. Its buttons, and the comment box, line up with them once
+   there are comments; a first comment starts at the left edge. */
+.comments{list-style: none; padding-left: 5rem;}
+.comments li{padding-bottom: 1rem;}
+.entry .comments p{padding-bottom: 0;}
 .comment-edit{margin: 0 0 0 0.5rem; padding: 0 0.4rem;}
 .comment-form.after-comments, .entry-actions.after-comments{padding-left: 5rem;}
 .comment-form textarea{display: block; width: calc(100% - 1rem); height: 5rem; padding: 0.5rem; resize: vertical;}
 .comment-form-row{display: flex; align-items: center; padding-top: 0.5rem;}
 .entry .comment-form-row p{flex: 1; min-width: 0; padding: 0 0.5rem 0 0;}
 .comment-form-row button:last-child{margin-right: 0;}
-figure.entry-image{margin: 0;}
-figure.entry-image img{display:block; max-width: 100%;}
-figure.entry-image figcaption{font-size: 0.75rem; text-align: right; padding-top: 0.25rem;}
-.notice{padding: 2rem 0;}
-h1 a{color: inherit; text-decoration: none;}
 
-/* Nickname page: the same column and type as the feed. */
-#myPage{padding: 2rem 0;}
-#myPage h2{font-size: 1.5rem; padding-bottom: 1rem;}
-#myPage p{padding-bottom: 1rem;}
-#myPage label, #myPage .me-label{display: block; padding-bottom: 0.25rem;}
-.me-row{display: flex; gap: 0.5rem;}
-#nicknameInput{flex: 1; min-width: 0; padding: 0.1rem 0.5rem;}
-#nicknameSave{margin-right: 0;}
-#myPage .me-hint{font-size: 0.8rem; padding-top: 0.25rem;}
-button, input, textarea{color:black; line-height: 1.7; font-size: 1rem; font-family: 'Gowun Batang', serif;
-word-break: keep-all; border:none; background:var(--color-point); outline:none;}
-button:hover{background:black; color:white;}
-button{padding: 0.1rem 0.5rem; margin-right: 0.5rem; cursor: pointer;}
-
-/* Bottom-right buttons, flush with the column's right edge: 구글로그인 for a visitor,
-   마이페이지 and 글쓰기 once signed in. */
+/* ---- Bottom-right buttons ----
+   Flush with the column's right edge: 구글로그인 for a visitor, 글쓰기 and 로그아웃 once
+   signed in. Folded away while the write panel is open. */
 #dock{position:fixed; bottom:0; right:calc(50% - 300px - 1rem); display:flex; gap:0.5rem;}
 #dock[hidden]{display:none;}
 #dock button{margin:0; padding: 0.1rem 1rem;}
 
-/* The form carries the panel colour so the inputs and the bottom row read as one block.
+/* ---- Write panel ----
+   The form carries the panel colour so the inputs and the bottom row read as one block.
    글쓰기 raises it to 80vh, and the text box takes whatever height the other rows leave. */
 #writeForm{position: fixed; left: calc(50% - 300px - 1rem); bottom: 0; width: calc(600px + 2rem);
 background:var(--color-point); display:flex; flex-direction:column; height:80vh;}
 #writeForm[hidden]{display:none;}
-#entryTitle, #entryText {border:none; background:transparent; width: 100%; padding:1rem;}
-#entryTitle{padding-bottom:0;}
+#entryTitle, #entryText{background:transparent; width: 100%; padding:1rem;}
+#entryTitle{font-size: 1.5rem; padding-bottom:0;}
 #entryText{flex:1; min-height:0; resize:none; word-spacing: -0.1rem; padding-top:0; padding-bottom:0.5rem;}
-#entryDate{width:auto; font-size: 0.9rem; color-scheme: light; background:transparent;}
 /* Uploaded, not yet placed in the text. */
-#photoStrip{display:flex; gap:0.75rem; align-items:center; padding:0 1rem 0.5rem; overflow-x:auto;}
+#photoStrip{display:flex; flex:none; gap:0.75rem; align-items:center; padding:0 1rem 0.5rem; overflow-x:auto;}
 #photoStrip[hidden]{display:none;}
 .photo-chip{display:flex; align-items:center; gap:0.3rem; flex:none;}
 .photo-chip img{width:2.4rem; height:2.4rem; object-fit:cover; display:block;}
 .photo-chip button{font-size:0.8rem; margin:0;}
 /* Shares the panel colour, so an underline marks where to type. */
 .photo-credit{width:9rem; font-size:0.8rem; background:transparent; border-bottom:1px solid currentColor; padding:0 0.2rem;}
-#photoStrip, #formBottom{flex:none;}
-#formBottom{display:flex; align-items:center; padding:0 1rem;}
-#formMessage{margin:0 0.75rem 0 0; font-size:0.8rem; flex:1; min-width:0;}
+#formBottom{display:flex; flex:none; align-items:center; padding:0 1rem;}
+#formMessage{margin-right:0.75rem; font-size:0.8rem; flex:1; min-width:0;}
+#entryDate{font-size: 0.9rem; color-scheme: light; background:transparent;}
 #cancelButton{margin-right: 0;}
 
-/* Below the 600px column plus the write form's 1rem sides (2 x 20px on a PC). */
-@media (max-width: 640px) {
-    :root{--color-point: #222;}
-    body{background:black;}
-    html{color:white;}
-    header, main, footer{width: calc(100% - 2rem);}
-    #writeForm {left: 0px; width: 100vw;}
-    #dock{right:0;}
-    #formBottom{padding-left:0; padding-right:0;}
-    .comments, .comment-form.after-comments, .entry-actions.after-comments{padding-left: 3rem;}
-    #entryDate, #entryTitle, #entryText, .photo-credit, #nicknameInput, .comment-form textarea{color:#eee;}
-    #entryDate{color-scheme: dark;}
-    button{color:#eee;}
-    button:hover{background:white; color:black;}
+/* ---- Nickname page: the same column and type as the feed ---- */
+#myPage{padding: 2rem 0;}
+#myPage h2{font-size: 1.5rem; padding-bottom: 1rem;}
+#myPage p{padding-bottom: 1rem;}
+#myPage label, #myPage .me-label{display: block; padding-bottom: 0.25rem;}
+#myPage .me-hint{font-size: 0.8rem; padding-top: 0.25rem;}
+.me-row{display: flex; gap: 0.5rem;}
+#nicknameInput{flex: 1; min-width: 0; padding: 0.1rem 0.5rem;}
+#nicknameSave{margin-right: 0;}
+
+/* ---- PC: 20px type, and entry text kept 5rem short of the column's right edge ---- */
+@media (min-width: 641px){
+  html{font-size: 20px;}
+  .entry-body{padding-right: 5rem;}
+}
+
+/* ---- Phone: below the 600px column plus the write panel's 1rem sides ----
+   The browser's own type size, a dark page, and the full screen width. */
+@media (max-width: 640px){
+  :root{--color-point: #222;}
+  html{color:white;}
+  body{background:black;}
+  header, main, footer{width: calc(100% - 2rem);}
+  #writeForm{left: 0; width: 100vw;}
+  #dock{right:0;}
+  #formBottom{padding:0;}
+  .comments, .comment-form.after-comments, .entry-actions.after-comments{padding-left: 3rem;}
+  #entryDate, #entryTitle, #entryText, .photo-credit, #nicknameInput, .comment-form textarea{color:#eee;}
+  #entryDate{color-scheme: dark;}
+  button{color:#eee;}
+  button:hover{background:white; color:black;}
 }
