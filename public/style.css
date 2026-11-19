@@ -24,7 +24,7 @@ h1 a{color: inherit; text-decoration: none;}
 .notice{padding: 2rem 0;}
 
 /* ---- Entries ---- */
-.entry{padding: 2rem 0;}
+.entry{padding: 3rem 0;}
 .entry h2{font-size: 1rem;}
 .entry.is-editing h2::after{content:" (수정 중)"; font-size: 0.8rem;}
 /* The title is the switch that folds the entry; the browser's triangle is dropped so it
