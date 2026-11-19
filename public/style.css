@@ -19,7 +19,6 @@ body, h1, h2, ul, ol, p{font-weight:normal; margin: 0; padding: 0;}
 header, main, footer, #writeForm{width: 600px; margin: 0 auto;}
 header{padding:4rem 0 1rem;}
 footer{padding-bottom: 50vh;}
-#entryContainer{padding:2rem 0rem;}
 .entry{padding: 2rem 0;}
 #entryTitle{font-size: 1.5rem;}
 .entry h2{font-size: 1rem;}
